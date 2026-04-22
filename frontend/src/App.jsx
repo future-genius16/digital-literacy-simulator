@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useState } from "react"
 
 const modules = {
@@ -38,6 +39,17 @@ const modules = {
       explanation:
         "Always verify sources before sharing information.",
     },
+    {
+      id: 2,
+      title: "Unknown Website",
+      text: "You find an article on an unfamiliar website with no author or references. The information seems surprising.",
+      options: [
+        { text: "Trust the information and use it", isCorrect: false },
+        { text: "Check other reliable sources to verify", isCorrect: true },
+      ],
+      explanation:
+        "Reliable information should be verified across multiple trusted sources.",
+    }
   ],
 
   data: [
@@ -52,6 +64,17 @@ const modules = {
       explanation:
         "Only grant permissions that are necessary.",
     },
+    {
+      id: 2,
+      title: "Public Wi-Fi",
+      text: "You are using public Wi-Fi and need to log into your bank account.",
+      options: [
+        { text: "Log in as usual", isCorrect: false },
+        { text: "Avoid logging in or use a secure connection", isCorrect: true },
+      ],
+      explanation:
+        "Public Wi-Fi networks are often insecure and can expose sensitive data.",
+    }
   ],
 }
 
@@ -69,11 +92,36 @@ function App() {
   const [showExplanation, setShowExplanation] = useState(false)
   const [finished, setFinished] = useState(false)
   const [score, setScore] = useState(0)
+  const [scenariosFromServer, setScenariosFromServer] = useState([])
 
-  const currentScenarios = selectedModule
-    ? modules[selectedModule]
-    : []
-  
+  useEffect(() => {
+    fetch("http://localhost:3001/scenarios")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("DATA FROM SERVER:", data)
+        setScenariosFromServer(data)
+      })
+      .catch((err) => console.error(err))
+  }, [])
+
+const currentScenarios = selectedModule
+  ? scenariosFromServer
+      .filter((scenario) => scenario.module === selectedModule)
+      .map((scenario) => ({
+        ...scenario,
+        options: [
+          {
+            text: scenario.option_a,
+            isCorrect: scenario.correct_option === "option_a",
+          },
+          {
+            text: scenario.option_b,
+            isCorrect: scenario.correct_option === "option_b",
+          },
+        ],
+      }))
+  : []
+
   const currentScenario = currentScenarios[currentScenarioIndex]
   if (started && !finished && !currentScenario) {
     return (
