@@ -135,3 +135,26 @@ body {
   color: red;
   margin-top: 20px;
 }
+
+.scenario-label {
+  font-size: 14px;
+  color: #6b7a99;
+  margin-bottom: 12px;
+}
+
+.feedback-box {
+  margin-top: 24px;
+  padding: 20px;
+  background: #f5f7fb;
+  border-radius: 16px;
+}
+
+.next-button {
+  margin-top: 16px;
+  background: #2f5bea;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+}
