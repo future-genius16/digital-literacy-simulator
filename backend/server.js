@@ -30,6 +30,24 @@ app.get("/scenarios", async (req, res) => {
   }
 })
 
+app.post("/results", async (req, res) => {
+  const { module, score, total_questions } = req.body
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO results (module, score, total_questions)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [module, score, total_questions]
+    )
+
+    res.status(201).json(result.rows[0])
+  } catch (error) {
+    console.error(error)
+    res.status(500).send("Error saving result")
+  }
+})
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`)
 })
