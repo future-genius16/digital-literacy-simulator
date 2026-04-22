@@ -43,13 +43,18 @@ function App() {
   const [selectedAnswer, setSelectedAnswer] = useState(null)
   const [showExplanation, setShowExplanation] = useState(false)
   const [finished, setFinished] = useState(false)
+  const [score, setScore] = useState(0)
 
   const currentScenario = scenarios[currentScenarioIndex]
 
   const handleAnswerClick = (isCorrect) => {
-    setSelectedAnswer(isCorrect)
-    setShowExplanation(true)
+  setSelectedAnswer(isCorrect)
+  setShowExplanation(true)
+
+  if (isCorrect) {
+    setScore(score + 1)
   }
+}
 
   const handleNextScenario = () => {
     if (currentScenarioIndex < scenarios.length - 1) {
@@ -101,26 +106,32 @@ function App() {
   }
 
   if (finished) {
-    return (
-      <div className="app">
-        <div className="scenario">
-          <h2>Module completed</h2>
-          <p>You have completed the Phishing & Threats module.</p>
-          <button
-            onClick={() => {
-              setStarted(false)
-              setCurrentScenarioIndex(0)
-              setSelectedAnswer(null)
-              setShowExplanation(false)
-              setFinished(false)
-            }}
-          >
-            Back to homepage
-          </button>
-        </div>
+  return (
+    <div className="app">
+      <div className="scenario">
+        <h2>Module completed</h2>
+        <p>You have completed the Phishing & Threats module.</p>
+
+        <p>
+          Your score: {score} / {scenarios.length}
+        </p>
+
+        <button
+          onClick={() => {
+            setStarted(false)
+            setCurrentScenarioIndex(0)
+            setSelectedAnswer(null)
+            setShowExplanation(false)
+            setFinished(false)
+            setScore(0)
+          }}
+        >
+          Back to homepage
+        </button>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
   return (
     <div className="app">
