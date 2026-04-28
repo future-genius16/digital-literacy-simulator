@@ -93,6 +93,8 @@ function App() {
   const [finished, setFinished] = useState(false)
   const [score, setScore] = useState(0)
   const [scenariosFromServer, setScenariosFromServer] = useState([])
+  const [results, setResults] = useState([])
+  const [showResults, setShowResults] = useState(false)
 
   useEffect(() => {
     fetch("http://localhost:3001/scenarios")
@@ -103,6 +105,48 @@ function App() {
       })
       .catch((err) => console.error(err))
   }, [])
+
+  useEffect(() => {
+  fetch("http://localhost:3001/scenarios")
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("DATA FROM SERVER:", data)
+      setScenariosFromServer(data)
+    })
+    .catch((err) => console.error(err))
+}, [])
+
+  useEffect(() => {
+    if (finished) {
+      fetch("http://localhost:3001/results", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          module: selectedModule,
+          score: score,
+          total_questions: currentScenarios.length,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("RESULT SAVED:", data)
+        })
+        .catch((err) => console.error(err))
+    }
+  }, [finished])
+
+  useEffect(() => {
+    if (showResults) {
+      fetch("http://localhost:3001/results")
+        .then((res) => res.json())
+        .then((data) => {
+          setResults(data)
+        })
+        .catch((err) => console.error(err))
+    }
+  }, [showResults])
 
 const currentScenarios = selectedModule
   ? scenariosFromServer
@@ -152,6 +196,26 @@ const currentScenarios = selectedModule
     }
   }
 
+  if (showResults) {
+    return (
+      <div className="app">
+        <h2>Results History</h2>
+
+        {results.map((result) => (
+          <div key={result.id} className="result-card">
+            <p><strong>Module:</strong> {result.module}</p>
+            <p><strong>Score:</strong> {result.score} / {result.total_questions}</p>
+            <p><strong>Date:</strong> {new Date(result.created_at).toLocaleString()}</p>
+          </div>
+        ))}
+
+        <button onClick={() => setShowResults(false)}>
+          Back
+        </button>
+      </div>
+    )
+  }
+  
   if (!started) {
     return (
       <div className="app">
@@ -168,6 +232,10 @@ const currentScenarios = selectedModule
             }}
           >
             Start training
+          </button>
+
+          <button onClick={() => setShowResults(true)}>
+            View Results
           </button>
         </div>
 
