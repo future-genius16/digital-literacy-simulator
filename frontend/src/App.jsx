@@ -198,6 +198,26 @@ const handleAuth = async () => {
   }
 }  
 
+const handleLogout = () => {
+  setCurrentUser(null)
+  setToken("")
+  setResults([])
+  setShowResults(false)
+  setStarted(false)
+  setSelectedModule(null)
+  setAuthMessage("Logged out successfully.")
+}
+
+const startModule = (moduleKey) => {
+  if (!currentUser) {
+    setAuthMessage("Please log in first.")
+    return
+  }
+
+  setSelectedModule(moduleKey)
+  setStarted(true)
+}
+
 const currentScenarios = selectedModule
   ? scenariosFromServer
       .filter((scenario) => scenario.module === selectedModule)
@@ -293,10 +313,7 @@ const currentScenarios = selectedModule
             online safety skills.
           </p>
           <button
-            onClick={() => {
-              setSelectedModule("info")
-              setStarted(true)
-            }}
+            onClick={() => startModule("info")}
           >
             Start training
           </button>
@@ -348,10 +365,7 @@ const currentScenarios = selectedModule
               <h3>Information Evaluation</h3>
               <p>Learn how to identify fake news and unreliable sources.</p>
               <button
-                onClick={() => {
-                  setSelectedModule("info")
-                  setStarted(true)
-                }}
+                onClick={() => startModule("info")}
               >
                 Start
               </button>
@@ -361,10 +375,7 @@ const currentScenarios = selectedModule
               <h3>Phishing & Threats</h3>
               <p>Recognize phishing emails and online security risks.</p>
               <button
-                onClick={() => {
-                  setSelectedModule("phishing")
-                  setStarted(true)
-                }}
+                onClick={() => startModule("phishing")}
               >
                 Start
               </button>
@@ -374,10 +385,7 @@ const currentScenarios = selectedModule
               <h3>Data Protection</h3>
               <p>Understand how to protect your personal information online.</p>
               <button
-                onClick={() => {
-                  setSelectedModule("data")
-                  setStarted(true)
-                }}
+                onClick={() => startModule("data")}
               >
                 Start
               </button>
