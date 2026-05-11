@@ -95,6 +95,12 @@ function App() {
   const [scenariosFromServer, setScenariosFromServer] = useState([])
   const [results, setResults] = useState([])
   const [showResults, setShowResults] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [token, setToken] = useState("")
+  const [authMode, setAuthMode] = useState("login")
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [authMessage, setAuthMessage] = useState("")
 
   useEffect(() => {
     fetch("http://localhost:3001/scenarios")
@@ -117,11 +123,12 @@ function App() {
 }, [])
 
   useEffect(() => {
-    if (finished) {
+    if (finished && token) {
       fetch("http://localhost:3001/results", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           module: selectedModule,
@@ -135,18 +142,61 @@ function App() {
         })
         .catch((err) => console.error(err))
     }
-  }, [finished])
+  }, [finished, token])
 
   useEffect(() => {
-    if (showResults) {
-      fetch("http://localhost:3001/results")
+    if (showResults && token) {
+      fetch("http://localhost:3001/results", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
         .then((res) => res.json())
         .then((data) => {
           setResults(data)
         })
         .catch((err) => console.error(err))
     }
-  }, [showResults])
+  }, [showResults, token])
+
+const handleAuth = async () => {
+  const endpoint = authMode === "login" ? "login" : "register"
+
+  try {
+    const response = await fetch(`http://localhost:3001/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username,
+        password,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setAuthMessage(data.message || "Authentication failed")
+      return
+    }
+
+    if (authMode === "login") {
+      setCurrentUser(data.user)
+      setToken(data.token)
+      setAuthMessage(`Logged in as ${data.user.username}`)
+    } else {
+      setAuthMessage("Registration successful. Please log in.")
+      setAuthMode("login")
+    }
+
+    setUsername("")
+    setPassword("")
+  } catch (error) {
+    console.error(error)
+    setAuthMessage("Server connection error")
+  }
+}  
 
 const currentScenarios = selectedModule
   ? scenariosFromServer
@@ -199,19 +249,36 @@ const currentScenarios = selectedModule
   if (showResults) {
     return (
       <div className="app">
-        <h2>Results History</h2>
+        <div className="scenario">
+          <h2>My Results</h2>
 
-        {results.map((result) => (
-          <div key={result.id} className="result-card">
-            <p><strong>Module:</strong> {result.module}</p>
-            <p><strong>Score:</strong> {result.score} / {result.total_questions}</p>
-            <p><strong>Date:</strong> {new Date(result.created_at).toLocaleString()}</p>
-          </div>
-        ))}
+          {!currentUser && (
+            <p>Please log in to view your results.</p>
+          )}
 
-        <button onClick={() => setShowResults(false)}>
-          Back
-        </button>
+          {currentUser && results.length === 0 && (
+            <p>No results yet. Complete a module to see your progress.</p>
+          )}
+
+          {currentUser &&
+            results.map((result) => (
+              <div key={result.id} className="result-card">
+                <p>
+                  <strong>Module:</strong> {result.module}
+                </p>
+                <p>
+                  <strong>Score:</strong> {result.score} /{" "}
+                  {result.total_questions}
+                </p>
+                <p>
+                  <strong>Date:</strong>{" "}
+                  {new Date(result.created_at).toLocaleString()}
+                </p>
+              </div>
+            ))}
+
+          <button onClick={() => setShowResults(false)}>Back</button>
+        </div>
       </div>
     )
   }
@@ -237,6 +304,40 @@ const currentScenarios = selectedModule
           <button onClick={() => setShowResults(true)}>
             View Results
           </button>
+
+          <div className="auth-box">
+            <h3>{authMode === "login" ? "Login" : "Register"}</h3>
+
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+            />
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+
+            <button onClick={handleAuth}>
+              {authMode === "login" ? "Login" : "Register"}
+            </button>
+
+            <button
+              onClick={() => {
+                setAuthMode(authMode === "login" ? "register" : "login")
+                setAuthMessage("")
+              }}
+            >
+              Switch to {authMode === "login" ? "Register" : "Login"}
+            </button>
+
+            {authMessage && <p>{authMessage}</p>}
+            {currentUser && <p>Current user: {currentUser.username}</p>}
+          </div>
         </div>
 
         <div className="modules">
