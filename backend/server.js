@@ -1,21 +1,42 @@
+require("dotenv").config()
+
 const express = require("express")
 const cors = require("cors")
 const bcrypt = require("bcrypt")
+const jwt = require("jsonwebtoken")
 const { Pool } = require("pg")
 
 const app = express()
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 
 app.use(express.json())
 app.use(cors())
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "digital_literacy_simulator",
-  password: "postgres123",
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: Number(process.env.DB_PORT),
 })
+
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"]
+  const token = authHeader && authHeader.split(" ")[1]
+
+  if (!token) {
+    return res.status(401).json({ message: "Access token required" })
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (error, user) => {
+    if (error) {
+      return res.status(403).json({ message: "Invalid or expired token" })
+    }
+
+    req.user = user
+    next()
+  })
+}
 
 app.get("/", (req, res) => {
   res.send("Backend is running")
@@ -31,8 +52,9 @@ app.get("/scenarios", async (req, res) => {
   }
 })
 
-app.post("/results", async (req, res) => {
-  const { user_id, module, score, total_questions } = req.body
+app.post("/results", authenticateToken, async (req, res) => {
+  const { module, score, total_questions } = req.body
+  const user_id = req.user.id
 
   try {
     const result = await pool.query(
@@ -49,29 +71,18 @@ app.post("/results", async (req, res) => {
   }
 })
 
-app.get("/results", async (req, res) => {
-  const { user_id } = req.query
+app.get("/results", authenticateToken, async (req, res) => {
+  const user_id = req.user.id
 
   try {
-    let result
-
-    if (user_id) {
-      result = await pool.query(
-        `SELECT results.*, users.username
-         FROM results
-         LEFT JOIN users ON results.user_id = users.id
-         WHERE results.user_id = $1
-         ORDER BY results.created_at DESC`,
-        [user_id]
-      )
-    } else {
-      result = await pool.query(
-        `SELECT results.*, users.username
-         FROM results
-         LEFT JOIN users ON results.user_id = users.id
-         ORDER BY results.created_at DESC`
-      )
-    }
+    const result = await pool.query(
+      `SELECT results.*, users.username
+       FROM results
+       LEFT JOIN users ON results.user_id = users.id
+       WHERE results.user_id = $1
+       ORDER BY results.created_at DESC`,
+      [user_id]
+    )
 
     res.json(result.rows)
   } catch (error) {
@@ -130,8 +141,18 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid password" })
     }
 
+    const token = jwt.sign(
+      {
+        id: user.id,
+        username: user.username,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "2h" }
+    )
+
     res.json({
       message: "Login successful",
+      token,
       user: {
         id: user.id,
         username: user.username,
