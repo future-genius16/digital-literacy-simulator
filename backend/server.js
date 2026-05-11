@@ -32,14 +32,14 @@ app.get("/scenarios", async (req, res) => {
 })
 
 app.post("/results", async (req, res) => {
-  const { module, score, total_questions } = req.body
+  const { user_id, module, score, total_questions } = req.body
 
   try {
     const result = await pool.query(
-      `INSERT INTO results (module, score, total_questions)
-       VALUES ($1, $2, $3)
+      `INSERT INTO results (user_id, module, score, total_questions)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [module, score, total_questions]
+      [user_id, module, score, total_questions]
     )
 
     res.status(201).json(result.rows[0])
@@ -50,10 +50,29 @@ app.post("/results", async (req, res) => {
 })
 
 app.get("/results", async (req, res) => {
+  const { user_id } = req.query
+
   try {
-    const result = await pool.query(
-      "SELECT * FROM results ORDER BY created_at DESC"
-    )
+    let result
+
+    if (user_id) {
+      result = await pool.query(
+        `SELECT results.*, users.username
+         FROM results
+         LEFT JOIN users ON results.user_id = users.id
+         WHERE results.user_id = $1
+         ORDER BY results.created_at DESC`,
+        [user_id]
+      )
+    } else {
+      result = await pool.query(
+        `SELECT results.*, users.username
+         FROM results
+         LEFT JOIN users ON results.user_id = users.id
+         ORDER BY results.created_at DESC`
+      )
+    }
+
     res.json(result.rows)
   } catch (error) {
     console.error(error)
