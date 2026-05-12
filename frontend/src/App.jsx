@@ -307,53 +307,80 @@ const currentScenarios = selectedModule
     return (
       <div className="app">
         <div className="hero">
+          <span className="hero-badge">Web-based training platform</span>
+
           <h1>Digital Literacy Simulator</h1>
           <p>
             An interactive training platform for improving digital literacy and
             online safety skills.
           </p>
-          <button
-            onClick={() => startModule("info")}
-          >
-            Start training
-          </button>
+          <div className="hero-actions">
+            <button onClick={() => startModule("info")}>
+              Start training
+            </button>
 
-          <button onClick={() => setShowResults(true)}>
-            View Results
-          </button>
+            <button className="secondary-button" onClick={() => setShowResults(true)}>
+              View Results
+            </button>
+          </div>
 
           <div className="auth-box">
-            <h3>{authMode === "login" ? "Login" : "Register"}</h3>
+            {!currentUser && (
+              <>
+                <h3>{authMode === "login" ? "Login" : "Register"}</h3>
 
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-            />
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                />
 
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
 
-            <button onClick={handleAuth}>
-              {authMode === "login" ? "Login" : "Register"}
-            </button>
+                <button onClick={handleAuth}>
+                  {authMode === "login" ? "Login" : "Register"}
+                </button>
 
-            <button
-              onClick={() => {
-                setAuthMode(authMode === "login" ? "register" : "login")
-                setAuthMessage("")
-              }}
-            >
-              Switch to {authMode === "login" ? "Register" : "Login"}
-            </button>
+                <button
+                  onClick={() => {
+                    setAuthMode(authMode === "login" ? "register" : "login")
+                    setAuthMessage("")
+                    setUsername("")
+                    setPassword("")
+                  }}
+                >
+                  Switch to {authMode === "login" ? "Register" : "Login"}
+                </button>
+              </>
+            )}
 
-            {authMessage && <p>{authMessage}</p>}
-            {currentUser && <p>Current user: {currentUser.username}</p>}
+            {currentUser && (
+              <div className="user-panel">
+                <p>Signed in as {currentUser.username}</p>
+                <button onClick={handleLogout}>Logout</button>
+              </div>
+            )}
+
+            {authMessage && (
+              <p
+                className={
+                  authMessage.includes("Please") ||
+                  authMessage.includes("failed") ||
+                  authMessage.includes("Invalid") ||
+                  authMessage.includes("exists")
+                    ? "auth-message auth-error"
+                    : "auth-message auth-success"
+                }
+              >
+                {authMessage}
+              </p>
+            )}
           </div>
         </div>
 
@@ -362,7 +389,7 @@ const currentScenarios = selectedModule
 
           <div className="module-list">
             <div className="module-card">
-              <h3>Information Evaluation</h3>
+              <h3>📰 Information Evaluation</h3>
               <p>Learn how to identify fake news and unreliable sources.</p>
               <button
                 onClick={() => startModule("info")}
@@ -372,7 +399,7 @@ const currentScenarios = selectedModule
             </div>
 
             <div className="module-card">
-              <h3>Phishing & Threats</h3>
+              <h3>🛡️ Phishing & Threats</h3>
               <p>Recognize phishing emails and online security risks.</p>
               <button
                 onClick={() => startModule("phishing")}
@@ -382,7 +409,7 @@ const currentScenarios = selectedModule
             </div>
 
             <div className="module-card">
-              <h3>Data Protection</h3>
+              <h3>🔐 Data Protection</h3>
               <p>Understand how to protect your personal information online.</p>
               <button
                 onClick={() => startModule("data")}
