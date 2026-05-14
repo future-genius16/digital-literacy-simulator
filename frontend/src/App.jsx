@@ -101,6 +101,7 @@ function App() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [authMessage, setAuthMessage] = useState("")
+  const [authMessageType, setAuthMessageType] = useState("")
 
   useEffect(() => {
     fetch("http://localhost:3001/scenarios")
@@ -178,6 +179,7 @@ const handleAuth = async () => {
 
     if (!response.ok) {
       setAuthMessage(data.message || "Authentication failed")
+      setAuthMessageType("error")
       return
     }
 
@@ -185,8 +187,10 @@ const handleAuth = async () => {
       setCurrentUser(data.user)
       setToken(data.token)
       setAuthMessage(`Logged in as ${data.user.username}`)
+      setAuthMessageType("success")
     } else {
       setAuthMessage("Registration successful. Please log in.")
+      setAuthMessageType("success")
       setAuthMode("login")
     }
 
@@ -195,6 +199,7 @@ const handleAuth = async () => {
   } catch (error) {
     console.error(error)
     setAuthMessage("Server connection error")
+    setAuthMessageType("error")
   }
 }  
 
@@ -206,11 +211,13 @@ const handleLogout = () => {
   setStarted(false)
   setSelectedModule(null)
   setAuthMessage("Logged out successfully.")
+  setAuthMessageType("success")
 }
 
 const startModule = (moduleKey) => {
   if (!currentUser) {
     setAuthMessage("Please log in first.")
+    setAuthMessageType("error")
     return
   }
 
@@ -232,6 +239,14 @@ const currentScenarios = selectedModule
             text: scenario.option_b,
             isCorrect: scenario.correct_option === "option_b",
           },
+          ...(scenario.option_c
+            ? [
+                {
+                  text: scenario.option_c,
+                  isCorrect: scenario.correct_option === "option_c",
+                },
+              ]
+            : []),
         ],
       }))
   : []
@@ -351,6 +366,7 @@ const currentScenarios = selectedModule
                   onClick={() => {
                     setAuthMode(authMode === "login" ? "register" : "login")
                     setAuthMessage("")
+                    setAuthMessageType("")
                     setUsername("")
                     setPassword("")
                   }}
@@ -369,14 +385,9 @@ const currentScenarios = selectedModule
 
             {authMessage && (
               <p
-                className={
-                  authMessage.includes("Please") ||
-                  authMessage.includes("failed") ||
-                  authMessage.includes("Invalid") ||
-                  authMessage.includes("exists")
-                    ? "auth-message auth-error"
-                    : "auth-message auth-success"
-                }
+                className={`auth-message ${
+                  authMessageType === "error" ? "auth-error" : "auth-success"
+                }`}
               >
                 {authMessage}
               </p>

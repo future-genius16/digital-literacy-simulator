@@ -94,6 +94,29 @@ app.get("/results", authenticateToken, async (req, res) => {
 app.post("/register", async (req, res) => {
   const { username, password } = req.body
 
+  const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,50}$/
+
+  if (!username || !password) {
+    return res.status(400).json({
+      message: "Username and password are required",
+    })
+  }
+
+  if (!usernameRegex.test(username)) {
+    return res.status(400).json({
+      message:
+        "Username must be 3-30 characters long and contain only Latin letters, numbers or underscore",
+    })
+  }
+
+  if (!passwordRegex.test(password)) {
+    return res.status(400).json({
+      message:
+        "Password must be 6-50 characters long and contain at least one letter and one number",
+    })
+  }
+  
   try {
     const existingUser = await pool.query(
       "SELECT * FROM users WHERE username = $1",
