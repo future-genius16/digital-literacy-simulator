@@ -13,7 +13,7 @@ const saveResult = async ({ userId, module, score, totalQuestions }) => {
 
 const getUserResults = async (userId) => {
   const result = await pool.query(
-    `SELECT results.*, users.username
+    `SELECT results.*, users.email
      FROM results
      LEFT JOIN users ON results.user_id = users.id
      WHERE results.user_id = $1

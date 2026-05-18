@@ -1,13 +1,13 @@
 const authService = require("../services/authService")
 
-const register = async (req, res) => {
+const activate = async (req, res) => {
   try {
-    const user = await authService.registerUser(req.body)
-    res.status(201).json(user)
+    const data = await authService.activateAccount(req.body)
+    res.status(201).json(data)
   } catch (error) {
     console.error(error)
     res.status(error.statusCode || 500).json({
-      message: error.message || "Error registering user",
+      message: error.message || "Error activating account",
     })
   }
 }
@@ -25,6 +25,6 @@ const login = async (req, res) => {
 }
 
 module.exports = {
-  register,
+  activate,
   login,
 }

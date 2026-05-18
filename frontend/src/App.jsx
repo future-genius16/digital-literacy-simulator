@@ -98,7 +98,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [token, setToken] = useState("")
   const [authMode, setAuthMode] = useState("login")
-  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [authMessage, setAuthMessage] = useState("")
   const [authMessageType, setAuthMessageType] = useState("")
@@ -161,7 +161,7 @@ function App() {
   }, [showResults, token])
 
 const handleAuth = async () => {
-  const endpoint = authMode === "login" ? "login" : "register"
+  const endpoint = authMode === "login" ? "login" : "activate"
 
   try {
     const response = await fetch(`http://localhost:3001/${endpoint}`, {
@@ -170,7 +170,7 @@ const handleAuth = async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        username,
+        email,
         password,
       }),
     })
@@ -186,22 +186,22 @@ const handleAuth = async () => {
     if (authMode === "login") {
       setCurrentUser(data.user)
       setToken(data.token)
-      setAuthMessage(`Logged in as ${data.user.username}`)
+      setAuthMessage(`Logged in as ${data.user.email}`)
       setAuthMessageType("success")
     } else {
-      setAuthMessage("Registration successful. Please log in.")
+      setAuthMessage("Account activated successfully. Please log in.")
       setAuthMessageType("success")
       setAuthMode("login")
     }
 
-    setUsername("")
+    setEmail("")
     setPassword("")
   } catch (error) {
     console.error(error)
     setAuthMessage("Server connection error")
     setAuthMessageType("error")
   }
-}  
+}
 
 const handleLogout = () => {
   setCurrentUser(null)
@@ -342,13 +342,13 @@ const currentScenarios = selectedModule
           <div className="auth-box">
             {!currentUser && (
               <>
-                <h3>{authMode === "login" ? "Login" : "Register"}</h3>
+                <h3>{authMode === "login" ? "Login" : "Activate account"}</h3>
 
                 <input
-                  type="text"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
+                  type="email"
+                  placeholder="University email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                 />
 
                 <input
@@ -359,7 +359,7 @@ const currentScenarios = selectedModule
                 />
 
                 <button onClick={handleAuth}>
-                  {authMode === "login" ? "Login" : "Register"}
+                  {authMode === "login" ? "Login" : "Activate account"}
                 </button>
 
                 <button
@@ -367,11 +367,11 @@ const currentScenarios = selectedModule
                     setAuthMode(authMode === "login" ? "register" : "login")
                     setAuthMessage("")
                     setAuthMessageType("")
-                    setUsername("")
+                    setEmail("")
                     setPassword("")
                   }}
                 >
-                  Switch to {authMode === "login" ? "Register" : "Login"}
+                  Switch to {authMode === "login" ? "Activate account" : "Login"}
                 </button>
               </>
             )}
