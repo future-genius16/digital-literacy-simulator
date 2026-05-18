@@ -6,6 +6,7 @@ const cors = require("cors")
 const authRoutes = require("./routes/authRoutes")
 const scenarioRoutes = require("./routes/scenarioRoutes")
 const resultRoutes = require("./routes/resultRoutes")
+const adminRoutes = require("./routes/adminRoutes")
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
 app.use(authRoutes)
 app.use(scenarioRoutes)
 app.use(resultRoutes)
+app.use(adminRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`)
