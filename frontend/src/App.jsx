@@ -1,5 +1,11 @@
 import { useEffect } from "react"
 import { useState } from "react"
+import UserDashboard from "./components/UserDashboard"
+import ResultsPage from "./components/ResultsPage"
+import ModuleCard from "./components/ModuleCard"
+import LevelCard from "./components/LevelCard"
+import AuthBox from "./components/AuthBox"
+import ScenarioRenderer from "./components/ScenarioRenderer"
 
 const modules = {
   phishing: [
@@ -120,6 +126,33 @@ function App() {
   const [progress, setProgress] = useState([])
   const [selectedLevel, setSelectedLevel] = useState(1)
   const [showLevels, setShowLevels] = useState(false)
+  const [adminScenarios, setAdminScenarios] = useState([])
+  const [scenarioForm, setScenarioForm] = useState({
+    module: "phishing",
+    title: "",
+    text: "",
+    option_a: "",
+    option_b: "",
+    option_c: "",
+    option_d: "",
+    option_e: "",
+    correct_option: "option_a",
+    correct_options: [],
+    option_feedback: {
+      option_a: "",
+      option_b: "",
+      option_c: "",
+      option_d: "",
+      option_e: "",
+    },
+    explanation: "",
+    level: 1,
+    difficulty: "basic",
+    task_type: "single_choice",
+    digcomp_area: "Safety",
+    digcomp_competence: "",
+    learning_outcome: "",
+  })
 
   useEffect(() => {
     fetch("http://localhost:3001/scenarios")
@@ -160,6 +193,7 @@ useEffect(() => {
       .then((data) => {
         console.log("RESULT SAVED:", data)
         loadProgress()
+        loadResults()
       })
       .catch((err) => console.error(err))
   }
@@ -167,16 +201,7 @@ useEffect(() => {
 
   useEffect(() => {
     if (showResults && token) {
-      fetch("http://localhost:3001/results", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setResults(data)
-        })
-        .catch((err) => console.error(err))
+      loadResults()
     }
   }, [showResults, token])
 
@@ -189,6 +214,7 @@ useEffect(() => {
   useEffect(() => {
     if (token && currentUser) {
       loadProgress()
+      loadResults()
     }
   }, [token, currentUser])
 
@@ -285,8 +311,23 @@ const loadAdminData = async () => {
       return
     }
 
+    const scenariosResponse = await fetch("http://localhost:3001/admin/scenarios", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const scenariosData = await scenariosResponse.json()
+
+    if (!scenariosResponse.ok) {
+      setAdminMessage(scenariosData.message || "Failed to load scenarios")
+      setAdminMessageType("error")
+      return
+    }
+
     setAdminUsers(usersData)
     setAdminStats(statsData)
+    setAdminScenarios(scenariosData)
   } catch (error) {
     console.error(error)
     setAdminMessage("Server connection error")
@@ -314,6 +355,31 @@ const loadProgress = async () => {
     }
 
     setProgress(data)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const loadResults = async () => {
+  if (!token) {
+    return
+  }
+
+  try {
+    const response = await fetch("http://localhost:3001/results", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error(data.message || "Failed to load results")
+      return
+    }
+
+    setResults(data)
   } catch (error) {
     console.error(error)
   }
@@ -395,6 +461,132 @@ const handleUpdateUserStatus = async (userId, status) => {
   }
 }
 
+const updateScenarioForm = (field, value) => {
+  setScenarioForm((prev) => ({
+    ...prev,
+    [field]: value,
+  }))
+}
+
+const updateScenarioFeedback = (optionKey, value) => {
+  setScenarioForm((prev) => ({
+    ...prev,
+    option_feedback: {
+      ...prev.option_feedback,
+      [optionKey]: value,
+    },
+  }))
+}
+
+const toggleCorrectOption = (optionKey) => {
+  setScenarioForm((prev) => {
+    const alreadySelected = prev.correct_options.includes(optionKey)
+
+    return {
+      ...prev,
+      correct_options: alreadySelected
+        ? prev.correct_options.filter((item) => item !== optionKey)
+        : [...prev.correct_options, optionKey],
+    }
+  })
+}
+
+const handleCreateScenario = async () => {
+  const isMultiAnswer =
+    scenarioForm.task_type === "multi_select" ||
+    scenarioForm.task_type === "permission_check"
+
+  const payload = {
+    ...scenarioForm,
+    level: Number(scenarioForm.level),
+    correct_option: isMultiAnswer
+      ? scenarioForm.correct_options[0]
+      : scenarioForm.correct_option,
+    correct_options: isMultiAnswer
+      ? scenarioForm.correct_options
+      : [scenarioForm.correct_option],
+  }
+
+  if (
+    !payload.title.trim() ||
+    !payload.text.trim() ||
+    !payload.option_a.trim() ||
+    !payload.option_b.trim() ||
+    !payload.explanation.trim()
+  ) {
+    setAdminMessage(
+      "Please fill in title, scenario text, option A, option B and general explanation"
+    )
+    setAdminMessageType("error")
+    return
+  }
+
+  if (isMultiAnswer && scenarioForm.correct_options.length === 0) {
+    setAdminMessage("Please select at least one correct option")
+    setAdminMessageType("error")
+    return
+  }
+
+  try {
+    const response = await fetch("http://localhost:3001/admin/scenarios", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setAdminMessage(data.message || "Failed to create scenario")
+      setAdminMessageType("error")
+      return
+    }
+
+    setAdminMessage(`Scenario "${data.title}" added successfully`)
+    setAdminMessageType("success")
+
+    setScenarioForm({
+      module: "phishing",
+      title: "",
+      text: "",
+      option_a: "",
+      option_b: "",
+      option_c: "",
+      option_d: "",
+      option_e: "",
+      correct_option: "option_a",
+      correct_options: [],
+      option_feedback: {
+        option_a: "",
+        option_b: "",
+        option_c: "",
+        option_d: "",
+        option_e: "",
+      },
+      explanation: "",
+      level: 1,
+      difficulty: "basic",
+      task_type: "single_choice",
+      digcomp_area: "Safety",
+      digcomp_competence: "",
+      learning_outcome: "",
+    })
+
+    loadAdminData()
+
+    fetch("http://localhost:3001/scenarios")
+      .then((res) => res.json())
+      .then((data) => setScenariosFromServer(data))
+      .catch((err) => console.error(err))
+  } catch (error) {
+    console.error(error)
+    setAdminMessage("Server connection error")
+    setAdminMessageType("error")
+  }
+}
 
 const startModule = (moduleKey, level = 1) => {
   if (!currentUser) {
@@ -537,6 +729,10 @@ const currentScenarios = selectedModule
     } else {
       setFinished(true)
     }
+  }
+
+  const isMultiAnswerTask = (taskType) => {
+    return taskType === "multi_select" || taskType === "permission_check"
   }
 
   const toggleMultiSelectAnswer = (optionKey) => {
@@ -827,6 +1023,194 @@ const uniqueCourses = [
             </div>
           </div>
 
+          <div className="admin-section">
+            <h3>Scenario Management</h3>
+            {adminMessage && (
+              <p
+                className={`auth-message scenario-admin-message ${
+                  adminMessageType === "error" ? "auth-error" : "auth-success"
+                }`}
+              >
+                {adminMessage}
+              </p>
+            )}
+            <div className="scenario-admin-form">
+              <div className="scenario-form-row">
+                <select
+                  value={scenarioForm.module}
+                  onChange={(event) => updateScenarioForm("module", event.target.value)}
+                >
+                  <option value="phishing">phishing</option>
+                  <option value="info">info</option>
+                  <option value="data">data</option>
+                </select>
+
+                <select
+                  value={scenarioForm.level}
+                  onChange={(event) => updateScenarioForm("level", event.target.value)}
+                >
+                  <option value="1">Level 1</option>
+                  <option value="2">Level 2</option>
+                  <option value="3">Level 3</option>
+                </select>
+
+                <select
+                  value={scenarioForm.difficulty}
+                  onChange={(event) =>
+                    updateScenarioForm("difficulty", event.target.value)
+                  }
+                >
+                  <option value="basic">basic</option>
+                  <option value="intermediate">intermediate</option>
+                  <option value="advanced">advanced</option>
+                </select>
+
+                <select
+                  value={scenarioForm.task_type}
+                  onChange={(event) =>
+                    updateScenarioForm("task_type", event.target.value)
+                  }
+                >
+                  <option value="single_choice">single_choice</option>
+                  <option value="multi_select">multi_select</option>
+                  <option value="risk_analysis">risk_analysis</option>
+                  <option value="permission_check">permission_check</option>
+                </select>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Scenario title"
+                value={scenarioForm.title}
+                onChange={(event) => updateScenarioForm("title", event.target.value)}
+              />
+
+              <textarea
+                placeholder="Scenario text"
+                value={scenarioForm.text}
+                onChange={(event) => updateScenarioForm("text", event.target.value)}
+              />
+
+              <div className="scenario-options-grid">
+                {["option_a", "option_b", "option_c", "option_d", "option_e"].map(
+                  (optionKey) => (
+                    <div key={optionKey} className="scenario-option-editor">
+                      <label>{optionKey}</label>
+
+                      <input
+                        type="text"
+                        placeholder={`Text for ${optionKey}`}
+                        value={scenarioForm[optionKey]}
+                        onChange={(event) =>
+                          updateScenarioForm(optionKey, event.target.value)
+                        }
+                      />
+
+                      <textarea
+                        placeholder={`Feedback for ${optionKey}`}
+                        value={scenarioForm.option_feedback[optionKey]}
+                        onChange={(event) =>
+                          updateScenarioFeedback(optionKey, event.target.value)
+                        }
+                      />
+
+                      {scenarioForm.task_type === "multi_select" ||
+                      scenarioForm.task_type === "permission_check" ? (
+                        <label className="correct-option-control">
+                          <input
+                            type="checkbox"
+                            checked={scenarioForm.correct_options.includes(optionKey)}
+                            onChange={() => toggleCorrectOption(optionKey)}
+                          />
+                          Correct
+                        </label>
+                      ) : (
+                        <label className="correct-option-control">
+                          <input
+                            type="radio"
+                            name="correct_option"
+                            checked={scenarioForm.correct_option === optionKey}
+                            onChange={() =>
+                              updateScenarioForm("correct_option", optionKey)
+                            }
+                          />
+                          Correct
+                        </label>
+                      )}
+                    </div>
+                  )
+                )}
+              </div>
+
+              <textarea
+                placeholder="General explanation"
+                value={scenarioForm.explanation}
+                onChange={(event) =>
+                  updateScenarioForm("explanation", event.target.value)
+                }
+              />
+
+              <div className="scenario-form-row">
+                <input
+                  type="text"
+                  placeholder="DigComp area"
+                  value={scenarioForm.digcomp_area}
+                  onChange={(event) =>
+                    updateScenarioForm("digcomp_area", event.target.value)
+                  }
+                />
+
+                <input
+                  type="text"
+                  placeholder="DigComp competence"
+                  value={scenarioForm.digcomp_competence}
+                  onChange={(event) =>
+                    updateScenarioForm("digcomp_competence", event.target.value)
+                  }
+                />
+
+                <input
+                  type="text"
+                  placeholder="Learning outcome"
+                  value={scenarioForm.learning_outcome}
+                  onChange={(event) =>
+                    updateScenarioForm("learning_outcome", event.target.value)
+                  }
+                />
+              </div>
+
+              <button onClick={handleCreateScenario}>Add scenario</button>
+            </div>
+
+            <div className="admin-table-wrapper scenario-list">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Module</th>
+                    <th>Level</th>
+                    <th>Type</th>
+                    <th>Title</th>
+                    <th>Active</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {adminScenarios.map((scenario) => (
+                    <tr key={scenario.id}>
+                      <td>{scenario.id}</td>
+                      <td>{scenario.module}</td>
+                      <td>{scenario.level}</td>
+                      <td>{scenario.task_type}</td>
+                      <td>{scenario.title}</td>
+                      <td>{scenario.is_active ? "Yes" : "No"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {adminStats && (
             <div className="admin-section">
               <h3>Module statistics</h3>
@@ -861,42 +1245,16 @@ const uniqueCourses = [
     )
   }
 
-  if (showResults) {
-    return (
-      <div className="app">
-        <div className="scenario">
-          <h2>My Results</h2>
-
-          {!currentUser && (
-            <p>Please log in to view your results.</p>
-          )}
-
-          {currentUser && results.length === 0 && (
-            <p>No results yet. Complete a module to see your progress.</p>
-          )}
-
-          {currentUser &&
-            results.map((result) => (
-              <div key={result.id} className="result-card">
-                <p>
-                  <strong>Module:</strong> {result.module}
-                </p>
-                <p>
-                  <strong>Score:</strong> {result.score} /{" "}
-                  {result.total_questions}
-                </p>
-                <p>
-                  <strong>Date:</strong>{" "}
-                  {new Date(result.created_at).toLocaleString()}
-                </p>
-              </div>
-            ))}
-
-          <button onClick={() => setShowResults(false)}>Back</button>
-        </div>
-      </div>
-    )
-  }
+if (showResults) {
+  return (
+    <ResultsPage
+      currentUser={currentUser}
+      results={results}
+      moduleTitles={moduleTitles}
+      onBack={() => setShowResults(false)}
+    />
+  )
+}
   
   if (showLevels) {
     const moduleProgress = progress.filter(
@@ -931,46 +1289,13 @@ const uniqueCourses = [
                 (progressItem) => Number(progressItem.level) === level
               )
 
-              const isUnlocked = item?.is_unlocked
-              const isCompleted = item?.is_completed
-
               return (
-                <div
+                <LevelCard
                   key={level}
-                  className={`level-card ${
-                    isCompleted
-                      ? "level-completed"
-                      : isUnlocked
-                      ? "level-unlocked"
-                      : "level-locked"
-                  }`}
-                >
-                  <div className="level-card-top">
-                    <span>Level {level}</span>
-                    <strong>
-                      {level === 1
-                        ? "Basic"
-                        : level === 2
-                        ? "Intermediate"
-                        : "Advanced"}
-                    </strong>
-                  </div>
-
-                  <p>
-                    {isCompleted
-                      ? `Completed with best result: ${item.best_percentage}%`
-                      : isUnlocked
-                      ? "Available for training"
-                      : "Locked until the previous level is completed"}
-                  </p>
-
-                  <button
-                    disabled={!isUnlocked}
-                    onClick={() => startModule(selectedModule, level)}
-                  >
-                    {isCompleted ? "Train again" : isUnlocked ? "Start level" : "Locked"}
-                  </button>
-                </div>
+                  level={level}
+                  progressItem={item}
+                  onStart={() => startModule(selectedModule, level)}
+                />
               )
             })}
           </div>
@@ -1012,95 +1337,57 @@ const uniqueCourses = [
             )}
           </div>
 
-          <div className="auth-box">
-            {!currentUser && (
-              <>
-                <h3>{authMode === "login" ? "Login" : "Activate account"}</h3>
+          <AuthBox
+            currentUser={currentUser}
+            authMode={authMode}
+            email={email}
+            password={password}
+            authMessage={authMessage}
+            authMessageType={authMessageType}
+            setEmail={setEmail}
+            setPassword={setPassword}
+            setAuthMode={setAuthMode}
+            setAuthMessage={setAuthMessage}
+            setAuthMessageType={setAuthMessageType}
+            handleAuth={handleAuth}
+            handleLogout={handleLogout}
+          />
 
-                <input
-                  type="email"
-                  placeholder="University email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                />
-
-                <button onClick={handleAuth}>
-                  {authMode === "login" ? "Login" : "Activate account"}
-                </button>
-
-                <button
-                  onClick={() => {
-                    setAuthMode(authMode === "login" ? "register" : "login")
-                    setAuthMessage("")
-                    setAuthMessageType("")
-                    setEmail("")
-                    setPassword("")
-                  }}
-                >
-                  Switch to {authMode === "login" ? "Activate account" : "Login"}
-                </button>
-              </>
-            )}
-
-            {currentUser && (
-              <div className="user-panel">
-                <p>Signed in as {currentUser.email}</p>
-                <button onClick={handleLogout}>Logout</button>
-              </div>
-            )}
-
-            {authMessage && (
-              <p
-                className={`auth-message ${
-                  authMessageType === "error" ? "auth-error" : "auth-success"
-                }`}
-              >
-                {authMessage}
-              </p>
-            )}
-          </div>
+          {currentUser && (
+            <UserDashboard
+              currentUser={currentUser}
+              progress={progress}
+              results={results}
+              moduleTitles={moduleTitles}
+              openModuleLevels={openModuleLevels}
+            />
+          )}
         </div>
 
         <div className="modules">
           <h2>Modules</h2>
 
           <div className="module-list">
-            <div className="module-card">
-              <h3>📰 Information Evaluation</h3>
-              <p>Learn how to identify fake news and unreliable sources.</p>
-              <button
-                onClick={() => openModuleLevels("info")}
-              >
-                Start
-              </button>
-            </div>
+            <ModuleCard
+              icon="📰"
+              title="Information Evaluation"
+              description="Learn how to identify fake news and unreliable sources."
+              onStart={() => openModuleLevels("info")}
+            />
 
-            <div className="module-card">
-              <h3>🛡️ Phishing & Threats</h3>
-              <p>Recognize phishing emails and online security risks.</p>
-              <button
-                onClick={() => openModuleLevels("phishing")}
-              >
-                Start
-              </button>
-            </div>
+            <ModuleCard
+              icon="🛡️"
+              title="Phishing & Threats"
+              description="Recognize phishing emails and online security risks."
+              onStart={() => openModuleLevels("phishing")}
+            />
 
-            <div className="module-card">
-              <h3>🔐 Data Protection</h3>
-              <p>Understand how to protect your personal information online.</p>
-              <button
-                onClick={() => openModuleLevels("data")}
-              >
-                Start
-              </button>
-            </div>
+            <ModuleCard
+              icon="🔐"
+              title="Data Protection"
+              description="Understand how to protect your personal information online."
+              onStart={() => openModuleLevels("data")}
+            />
           </div>
         </div>
       </div>
@@ -1144,157 +1431,20 @@ const uniqueCourses = [
 }
 
   return (
-    <div className="app">
-      <div className="scenario">
-        <p className="scenario-label">
-          Level {selectedLevel} · Scenario {currentScenarioIndex + 1} of{" "}
-          {currentScenarios.length}
-        </p>
-
-        <h2>{currentScenario.title}</h2>
-
-        <p>{currentScenario.text}</p>
-
-        <h3>What would you do?</h3>
-
-        {currentScenario.task_type === "multi_select" ? (
-          <>
-            <div className="multi-select-hint">
-              Select all correct options, then click “Check answer”.
-            </div>
-            <div className="answers">
-              {currentScenario.options.map((option) => {
-                const isSelected = selectedAnswers.includes(option.key)
-
-                return (
-                  <button
-                    key={option.key}
-                    className={`option-button option-with-badge ${
-                      isSelected ? "selected-option" : ""
-                    } ${
-                      showExplanation && option.isCorrect ? "correct-option" : ""
-                    } ${
-                      showExplanation && isSelected && !option.isCorrect
-                        ? "wrong-option"
-                        : ""
-                    }`}
-                    onClick={() => toggleMultiSelectAnswer(option.key)}
-                    disabled={showExplanation}
-                  >
-                    <span>{option.text}</span>
-
-                    <span className="answer-badges">
-                      {showExplanation && option.isCorrect && (
-                        <span className="answer-badge correct-badge">
-                          Correct answer
-                        </span>
-                      )}
-
-                      {showExplanation && isSelected && (
-                        <span className="answer-badge selected-badge">
-                          Your choice
-                        </span>
-                      )}
-
-                      {showExplanation && option.isCorrect && !isSelected && (
-                        <span className="answer-badge missed-badge">
-                          Missed
-                        </span>
-                      )}
-
-                      {showExplanation && isSelected && !option.isCorrect && (
-                        <span className="answer-badge wrong-badge">
-                          Wrong choice
-                        </span>
-                      )}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-
-            {!showExplanation && (
-              <button
-                className="check-answer-button"
-                disabled={selectedAnswers.length === 0}
-                onClick={checkMultiSelectAnswer}
-              >
-                Check answer
-              </button>
-            )}
-          </>
-        ) : (
-          <div className="answers">
-            {currentScenario.options.map((option) => (
-              <button
-                key={option.key}
-                className={`option-button ${
-                  showExplanation && option.isCorrect ? "correct-option" : ""
-                } ${
-                  showExplanation && selectedAnswer === false && option.isCorrect === false
-                    ? "wrong-option"
-                    : ""
-                }`}
-                onClick={() => handleAnswerClick(option.isCorrect)}
-                disabled={showExplanation}
-              >
-                {option.text}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {showExplanation && (
-          <div className="feedback-box">
-            <p className={selectedAnswer ? "correct" : "wrong"}>
-              {selectedAnswer ? "✅ Correct!" : "❌ Incorrect."}
-            </p>
-
-            {currentScenario.task_type === "multi_select" && (
-              <div className="correct-answers-box">
-                <strong>Answer breakdown:</strong>
-
-                <ul>
-                  {currentScenario.options
-                    .filter(
-                      (option) =>
-                        option.isCorrect || selectedAnswers.includes(option.key)
-                    )
-                    .map((option) => {
-                      const isSelected = selectedAnswers.includes(option.key)
-                      const isMissed = option.isCorrect && !isSelected
-                      const isWrongChoice = isSelected && !option.isCorrect
-
-                      return (
-                        <li key={option.key}>
-                          <span>
-                            {option.isCorrect && isSelected && "✅ Correct choice: "}
-                            {isMissed && "⚠️ Missed correct answer: "}
-                            {isWrongChoice && "❌ Wrong choice: "}
-                            <strong>{option.text}</strong>
-                          </span>
-
-                          {option.feedback && (
-                            <p className="option-feedback-text">
-                              {option.feedback}
-                            </p>
-                          )}
-                        </li>
-                      )
-                    })}
-                </ul>
-              </div>
-            )}
-
-            <p>{currentScenario.explanation}</p>
-
-            <button className="next-button" onClick={handleNextScenario}>
-              Next scenario
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    <ScenarioRenderer
+      currentScenario={currentScenario}
+      currentScenarioIndex={currentScenarioIndex}
+      currentScenariosLength={currentScenarios.length}
+      selectedLevel={selectedLevel}
+      selectedAnswer={selectedAnswer}
+      selectedAnswers={selectedAnswers}
+      showExplanation={showExplanation}
+      isMultiAnswerTask={isMultiAnswerTask}
+      toggleMultiSelectAnswer={toggleMultiSelectAnswer}
+      checkMultiSelectAnswer={checkMultiSelectAnswer}
+      handleAnswerClick={handleAnswerClick}
+      handleNextScenario={handleNextScenario}
+    />
   )
 }
 
