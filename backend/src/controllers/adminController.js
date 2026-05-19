@@ -48,9 +48,63 @@ const getStatistics = async (req, res) => {
   }
 }
 
+const getScenarios = async (req, res) => {
+  try {
+    const scenarios = await adminService.getAllScenariosAdmin()
+    res.json(scenarios)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Error fetching scenarios" })
+  }
+}
+
+const createScenario = async (req, res) => {
+  try {
+    const scenario = await adminService.createScenario(req.body)
+    res.status(201).json(scenario)
+  } catch (error) {
+    console.error(error)
+    res.status(error.statusCode || 500).json({
+      message: error.message || "Error creating scenario",
+    })
+  }
+}
+
+const updateScenario = async (req, res) => {
+  try {
+    const scenario = await adminService.updateScenario({
+      scenarioId: req.params.id,
+      ...req.body,
+    })
+
+    res.json(scenario)
+  } catch (error) {
+    console.error(error)
+    res.status(error.statusCode || 500).json({
+      message: error.message || "Error updating scenario",
+    })
+  }
+}
+
+const deleteScenario = async (req, res) => {
+  try {
+    const scenario = await adminService.deleteScenario(req.params.id)
+    res.json(scenario)
+  } catch (error) {
+    console.error(error)
+    res.status(error.statusCode || 500).json({
+      message: error.message || "Error deleting scenario",
+    })
+  }
+}
+
 module.exports = {
   getUsers,
   createUser,
   updateStatus,
   getStatistics,
+  getScenarios,
+  createScenario,
+  updateScenario,
+  deleteScenario,
 }

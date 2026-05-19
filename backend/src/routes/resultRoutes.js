@@ -6,5 +6,10 @@ const router = express.Router()
 
 router.post("/results", authenticateToken, resultController.saveResult)
 router.get("/results", authenticateToken, resultController.getResults)
+router.get(
+  "/results/summary",
+  authenticateToken,
+  resultController.getResultsSummary
+)
 
 module.exports = router

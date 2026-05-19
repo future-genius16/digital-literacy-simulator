@@ -33,4 +33,32 @@ router.get(
   adminController.getStatistics
 )
 
+router.get(
+  "/admin/scenarios",
+  authenticateToken,
+  requireAdmin,
+  adminController.getScenarios
+)
+
+router.post(
+  "/admin/scenarios",
+  authenticateToken,
+  requireAdmin,
+  adminController.createScenario
+)
+
+router.put(
+  "/admin/scenarios/:id",
+  authenticateToken,
+  requireAdmin,
+  adminController.updateScenario
+)
+
+router.delete(
+  "/admin/scenarios/:id",
+  authenticateToken,
+  requireAdmin,
+  adminController.deleteScenario
+)
+
 module.exports = router

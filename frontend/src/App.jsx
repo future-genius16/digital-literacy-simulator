@@ -89,6 +89,7 @@ function App() {
   const [selectedModule, setSelectedModule] = useState(null)
   const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState(null)
+  const [selectedAnswers, setSelectedAnswers] = useState([])
   const [showExplanation, setShowExplanation] = useState(false)
   const [finished, setFinished] = useState(false)
   const [score, setScore] = useState(0)
@@ -116,6 +117,9 @@ function App() {
   const [roleFilter, setRoleFilter] = useState("all")
   const [programFilter, setProgramFilter] = useState("all")
   const [courseFilter, setCourseFilter] = useState("all")
+  const [progress, setProgress] = useState([])
+  const [selectedLevel, setSelectedLevel] = useState(1)
+  const [showLevels, setShowLevels] = useState(false)
 
   useEffect(() => {
     fetch("http://localhost:3001/scenarios")
@@ -137,27 +141,29 @@ function App() {
     .catch((err) => console.error(err))
 }, [])
 
-  useEffect(() => {
-    if (finished && token) {
-      fetch("http://localhost:3001/results", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          module: selectedModule,
-          score: score,
-          total_questions: currentScenarios.length,
-        }),
+useEffect(() => {
+  if (finished && token) {
+    fetch("http://localhost:3001/results", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        module: selectedModule,
+        level: selectedLevel,
+        score,
+        total_questions: currentScenarios.length,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("RESULT SAVED:", data)
+        loadProgress()
       })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log("RESULT SAVED:", data)
-        })
-        .catch((err) => console.error(err))
-    }
-  }, [finished, token])
+      .catch((err) => console.error(err))
+  }
+}, [finished, token])
 
   useEffect(() => {
     if (showResults && token) {
@@ -179,6 +185,12 @@ function App() {
       loadAdminData()
     }
   }, [showAdmin, token])
+
+  useEffect(() => {
+    if (token && currentUser) {
+      loadProgress()
+    }
+  }, [token, currentUser])
 
 const handleAuth = async () => {
   const endpoint = authMode === "login" ? "login" : "activate"
@@ -282,6 +294,31 @@ const loadAdminData = async () => {
   }
 }
 
+const loadProgress = async () => {
+  if (!token) {
+    return
+  }
+
+  try {
+    const response = await fetch("http://localhost:3001/progress", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error(data.message || "Failed to load progress")
+      return
+    }
+
+    setProgress(data)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 const handleCreateUser = async () => {
   if (!newUserEmail) {
     setAdminMessage("Email is required")
@@ -359,36 +396,111 @@ const handleUpdateUserStatus = async (userId, status) => {
 }
 
 
-const startModule = (moduleKey) => {
+const startModule = (moduleKey, level = 1) => {
   if (!currentUser) {
     setAuthMessage("Please log in first.")
     setAuthMessageType("error")
     return
   }
 
+  const levelProgress = progress.find(
+    (item) =>
+      item.module === moduleKey &&
+      Number(item.level) === Number(level)
+  )
+
+  if (levelProgress && !levelProgress.is_unlocked) {
+    setAuthMessage("This level is locked. Complete the previous level first.")
+    setAuthMessageType("error")
+    return
+  }
+
   setSelectedModule(moduleKey)
+  setSelectedLevel(level)
+  setCurrentScenarioIndex(0)
+  setSelectedAnswer(null)
+  setSelectedAnswers([])
+  setShowExplanation(false)
+  setFinished(false)
+  setScore(0)
+  setShowLevels(false)
   setStarted(true)
+}
+
+const openModuleLevels = (moduleName) => {
+  if (!currentUser) {
+    setAuthMessage("Please log in first.")
+    setAuthMessageType("error")
+    return
+  }
+
+  setSelectedModule(moduleName)
+  setSelectedLevel(1)
+  setShowLevels(true)
+  setStarted(false)
+  setShowResults(false)
+  setShowAdmin(false)
 }
 
 const currentScenarios = selectedModule
   ? scenariosFromServer
-      .filter((scenario) => scenario.module === selectedModule)
+      .filter(
+        (scenario) =>
+          scenario.module === selectedModule &&
+          Number(scenario.level || 1) === Number(selectedLevel)
+      )
       .map((scenario) => ({
         ...scenario,
         options: [
           {
+            key: "option_a",
             text: scenario.option_a,
-            isCorrect: scenario.correct_option === "option_a",
+            feedback: scenario.option_feedback?.option_a,
+            isCorrect:
+              scenario.correct_option === "option_a" ||
+              scenario.correct_options?.includes("option_a"),
           },
           {
+            key: "option_b",
             text: scenario.option_b,
-            isCorrect: scenario.correct_option === "option_b",
+            feedback: scenario.option_feedback?.option_b,
+            isCorrect:
+              scenario.correct_option === "option_b" ||
+              scenario.correct_options?.includes("option_b"),
           },
           ...(scenario.option_c
             ? [
                 {
+                  key: "option_c",
                   text: scenario.option_c,
-                  isCorrect: scenario.correct_option === "option_c",
+                  feedback: scenario.option_feedback?.option_c,
+                  isCorrect:
+                    scenario.correct_option === "option_c" ||
+                    scenario.correct_options?.includes("option_c"),
+                },
+              ]
+            : []),
+          ...(scenario.option_d
+            ? [
+                {
+                  key: "option_d",
+                  text: scenario.option_d,
+                  feedback: scenario.option_feedback?.option_d,
+                  isCorrect:
+                    scenario.correct_option === "option_d" ||
+                    scenario.correct_options?.includes("option_d"),
+                },
+              ]
+            : []),
+          ...(scenario.option_e
+            ? [
+                {
+                  key: "option_e",
+                  text: scenario.option_e,
+                  feedback: scenario.option_feedback?.option_e,
+                  isCorrect:
+                    scenario.correct_option === "option_e" ||
+                    scenario.correct_options?.includes("option_e"),
                 },
               ]
             : []),
@@ -420,11 +532,43 @@ const currentScenarios = selectedModule
     if (currentScenarioIndex < currentScenarios.length - 1) {
       setCurrentScenarioIndex(currentScenarioIndex + 1)
       setSelectedAnswer(null)
+      setSelectedAnswers([])
       setShowExplanation(false)
     } else {
       setFinished(true)
     }
   }
+
+  const toggleMultiSelectAnswer = (optionKey) => {
+  if (showExplanation) {
+    return
+  }
+
+  setSelectedAnswers((prev) =>
+    prev.includes(optionKey)
+      ? prev.filter((item) => item !== optionKey)
+      : [...prev, optionKey]
+  )
+}
+
+const checkMultiSelectAnswer = () => {
+  const currentScenario = currentScenarios[currentScenarioIndex]
+  const correctOptions = currentScenario.correct_options || []
+
+  const selectedSorted = [...selectedAnswers].sort()
+  const correctSorted = [...correctOptions].sort()
+
+  const isCorrect =
+    selectedSorted.length === correctSorted.length &&
+    selectedSorted.every((item, index) => item === correctSorted[index])
+
+  if (isCorrect) {
+    setScore((prevScore) => prevScore + 1)
+  }
+
+  setSelectedAnswer(isCorrect)
+  setShowExplanation(true)
+}
 
   const filteredAdminUsers = adminUsers.filter((user) => {
     const matchesSearch =
@@ -754,6 +898,87 @@ const uniqueCourses = [
     )
   }
   
+  if (showLevels) {
+    const moduleProgress = progress.filter(
+      (item) => item.module === selectedModule
+    )
+
+    return (
+      <div className="app">
+        <div className="levels-page">
+          <div className="levels-header">
+            <div>
+              <p className="scenario-label">Training levels</p>
+              <h2>{moduleTitles[selectedModule]}</h2>
+              <p>
+                Complete each level with at least 80% to unlock the next one.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowLevels(false)
+                setSelectedModule(null)
+              }}
+            >
+              Back to homepage
+            </button>
+          </div>
+
+          <div className="level-list">
+            {[1, 2, 3].map((level) => {
+              const item = moduleProgress.find(
+                (progressItem) => Number(progressItem.level) === level
+              )
+
+              const isUnlocked = item?.is_unlocked
+              const isCompleted = item?.is_completed
+
+              return (
+                <div
+                  key={level}
+                  className={`level-card ${
+                    isCompleted
+                      ? "level-completed"
+                      : isUnlocked
+                      ? "level-unlocked"
+                      : "level-locked"
+                  }`}
+                >
+                  <div className="level-card-top">
+                    <span>Level {level}</span>
+                    <strong>
+                      {level === 1
+                        ? "Basic"
+                        : level === 2
+                        ? "Intermediate"
+                        : "Advanced"}
+                    </strong>
+                  </div>
+
+                  <p>
+                    {isCompleted
+                      ? `Completed with best result: ${item.best_percentage}%`
+                      : isUnlocked
+                      ? "Available for training"
+                      : "Locked until the previous level is completed"}
+                  </p>
+
+                  <button
+                    disabled={!isUnlocked}
+                    onClick={() => startModule(selectedModule, level)}
+                  >
+                    {isCompleted ? "Train again" : isUnlocked ? "Start level" : "Locked"}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!started) {
     return (
       <div className="app">
@@ -766,7 +991,7 @@ const uniqueCourses = [
             online safety skills.
           </p>
           <div className="hero-actions">
-            <button onClick={() => startModule("info")}>
+            <button onClick={() => openModuleLevels("info")}>
               Start training
             </button>
 
@@ -851,7 +1076,7 @@ const uniqueCourses = [
               <h3>📰 Information Evaluation</h3>
               <p>Learn how to identify fake news and unreliable sources.</p>
               <button
-                onClick={() => startModule("info")}
+                onClick={() => openModuleLevels("info")}
               >
                 Start
               </button>
@@ -861,7 +1086,7 @@ const uniqueCourses = [
               <h3>🛡️ Phishing & Threats</h3>
               <p>Recognize phishing emails and online security risks.</p>
               <button
-                onClick={() => startModule("phishing")}
+                onClick={() => openModuleLevels("phishing")}
               >
                 Start
               </button>
@@ -871,7 +1096,7 @@ const uniqueCourses = [
               <h3>🔐 Data Protection</h3>
               <p>Understand how to protect your personal information online.</p>
               <button
-                onClick={() => startModule("data")}
+                onClick={() => openModuleLevels("data")}
               >
                 Start
               </button>
@@ -886,25 +1111,32 @@ const uniqueCourses = [
     return (
       <div className="app">
         <div className="scenario">
-          <h2>Module completed</h2>
-          <p>You have completed the {moduleTitles[selectedModule]} module.</p>
-
+          <h2>Level completed</h2>
+          <p>
+            You have completed Level {selectedLevel} of the{" "}
+            {moduleTitles[selectedModule]} module.
+          </p>
           <p>
             Your score: {score} / {currentScenarios.length}
+          </p>
+          <p className="level-note">
+            Score of 80% or higher unlocks the next level.
           </p>
 
           <button
             onClick={() => {
               setStarted(false)
-              setSelectedModule(null)
               setCurrentScenarioIndex(0)
               setSelectedAnswer(null)
+              setSelectedAnswers([])
               setShowExplanation(false)
               setFinished(false)
               setScore(0)
+              setShowLevels(true)
+              loadProgress()
             }}
           >
-            Back to homepage
+            Back to levels
           </button>
         </div>
       </div>
@@ -915,7 +1147,8 @@ const uniqueCourses = [
     <div className="app">
       <div className="scenario">
         <p className="scenario-label">
-          Scenario {currentScenarioIndex + 1} of {currentScenarios.length}
+          Level {selectedLevel} · Scenario {currentScenarioIndex + 1} of{" "}
+          {currentScenarios.length}
         </p>
 
         <h2>{currentScenario.title}</h2>
@@ -924,23 +1157,135 @@ const uniqueCourses = [
 
         <h3>What would you do?</h3>
 
-        <div className="answers">
-          {currentScenario.options.map((option, index) => (
-            <button
-              key={index}
-              onClick={() => handleAnswerClick(option.isCorrect)}
-              disabled={showExplanation}
-            >
-              {option.text}
-            </button>
-          ))}
-        </div>
+        {currentScenario.task_type === "multi_select" ? (
+          <>
+            <div className="multi-select-hint">
+              Select all correct options, then click “Check answer”.
+            </div>
+            <div className="answers">
+              {currentScenario.options.map((option) => {
+                const isSelected = selectedAnswers.includes(option.key)
+
+                return (
+                  <button
+                    key={option.key}
+                    className={`option-button option-with-badge ${
+                      isSelected ? "selected-option" : ""
+                    } ${
+                      showExplanation && option.isCorrect ? "correct-option" : ""
+                    } ${
+                      showExplanation && isSelected && !option.isCorrect
+                        ? "wrong-option"
+                        : ""
+                    }`}
+                    onClick={() => toggleMultiSelectAnswer(option.key)}
+                    disabled={showExplanation}
+                  >
+                    <span>{option.text}</span>
+
+                    <span className="answer-badges">
+                      {showExplanation && option.isCorrect && (
+                        <span className="answer-badge correct-badge">
+                          Correct answer
+                        </span>
+                      )}
+
+                      {showExplanation && isSelected && (
+                        <span className="answer-badge selected-badge">
+                          Your choice
+                        </span>
+                      )}
+
+                      {showExplanation && option.isCorrect && !isSelected && (
+                        <span className="answer-badge missed-badge">
+                          Missed
+                        </span>
+                      )}
+
+                      {showExplanation && isSelected && !option.isCorrect && (
+                        <span className="answer-badge wrong-badge">
+                          Wrong choice
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {!showExplanation && (
+              <button
+                className="check-answer-button"
+                disabled={selectedAnswers.length === 0}
+                onClick={checkMultiSelectAnswer}
+              >
+                Check answer
+              </button>
+            )}
+          </>
+        ) : (
+          <div className="answers">
+            {currentScenario.options.map((option) => (
+              <button
+                key={option.key}
+                className={`option-button ${
+                  showExplanation && option.isCorrect ? "correct-option" : ""
+                } ${
+                  showExplanation && selectedAnswer === false && option.isCorrect === false
+                    ? "wrong-option"
+                    : ""
+                }`}
+                onClick={() => handleAnswerClick(option.isCorrect)}
+                disabled={showExplanation}
+              >
+                {option.text}
+              </button>
+            ))}
+          </div>
+        )}
 
         {showExplanation && (
           <div className="feedback-box">
             <p className={selectedAnswer ? "correct" : "wrong"}>
               {selectedAnswer ? "✅ Correct!" : "❌ Incorrect."}
             </p>
+
+            {currentScenario.task_type === "multi_select" && (
+              <div className="correct-answers-box">
+                <strong>Answer breakdown:</strong>
+
+                <ul>
+                  {currentScenario.options
+                    .filter(
+                      (option) =>
+                        option.isCorrect || selectedAnswers.includes(option.key)
+                    )
+                    .map((option) => {
+                      const isSelected = selectedAnswers.includes(option.key)
+                      const isMissed = option.isCorrect && !isSelected
+                      const isWrongChoice = isSelected && !option.isCorrect
+
+                      return (
+                        <li key={option.key}>
+                          <span>
+                            {option.isCorrect && isSelected && "✅ Correct choice: "}
+                            {isMissed && "⚠️ Missed correct answer: "}
+                            {isWrongChoice && "❌ Wrong choice: "}
+                            <strong>{option.text}</strong>
+                          </span>
+
+                          {option.feedback && (
+                            <p className="option-feedback-text">
+                              {option.feedback}
+                            </p>
+                          )}
+                        </li>
+                      )
+                    })}
+                </ul>
+              </div>
+            )}
+
             <p>{currentScenario.explanation}</p>
 
             <button className="next-button" onClick={handleNextScenario}>

@@ -7,6 +7,7 @@ const authRoutes = require("./routes/authRoutes")
 const scenarioRoutes = require("./routes/scenarioRoutes")
 const resultRoutes = require("./routes/resultRoutes")
 const adminRoutes = require("./routes/adminRoutes")
+const progressRoutes = require("./routes/progressRoutes")
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -22,6 +23,7 @@ app.use(authRoutes)
 app.use(scenarioRoutes)
 app.use(resultRoutes)
 app.use(adminRoutes)
+app.use(progressRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`)
