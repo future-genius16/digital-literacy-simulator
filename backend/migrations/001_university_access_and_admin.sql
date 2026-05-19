@@ -16,12 +16,18 @@ ALTER TABLE users
 ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 ALTER TABLE users
+ADD COLUMN IF NOT EXISTS study_program VARCHAR(100);
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS course INTEGER;
+
+ALTER TABLE users
 ALTER COLUMN password DROP NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique
 ON users (email);
 
--- Example university users for local development/demo
+-- Example university users for local development
 INSERT INTO users (username, email, password, role, status)
 VALUES
   ('student1@edu.hse.ru', 'student1@edu.hse.ru', NULL, 'student', 'invited'),

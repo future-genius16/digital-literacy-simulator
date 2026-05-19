@@ -17,6 +17,8 @@ const getAllUsers = async () => {
        email,
        role,
        status,
+       study_program,
+       course,
        created_at,
        activated_at,
        updated_at
@@ -27,7 +29,12 @@ const getAllUsers = async () => {
   return result.rows
 }
 
-const createInvitedUser = async ({ email, role = "student" }) => {
+const createInvitedUser = async ({
+  email,
+  role = "student",
+  study_program = null,
+  course = null,
+}) => {
   if (!email) {
     const error = new Error("Email is required")
     error.statusCode = 400
@@ -42,19 +49,41 @@ const createInvitedUser = async ({ email, role = "student" }) => {
     throw error
   }
 
+  const normalizedCourse =
+    course === "" || course === null || course === undefined
+      ? null
+      : Number(course)
+
+  if (normalizedCourse !== null && (normalizedCourse < 1 || normalizedCourse > 6)) {
+    const error = new Error("Course must be between 1 and 6")
+    error.statusCode = 400
+    throw error
+  }
+
   const result = await pool.query(
-    `INSERT INTO users (username, email, password, role, status, updated_at)
-     VALUES ($1, $2, NULL, $3, 'invited', CURRENT_TIMESTAMP)
+    `INSERT INTO users (
+       username,
+       email,
+       password,
+       role,
+       status,
+       study_program,
+       course,
+       updated_at
+     )
+     VALUES ($1, $2, NULL, $3, 'invited', $4, $5, CURRENT_TIMESTAMP)
      ON CONFLICT (email) DO NOTHING
      RETURNING 
        id,
        email,
        role,
        status,
+       study_program,
+       course,
        created_at,
        activated_at,
        updated_at`,
-    [normalizedEmail, normalizedEmail, role]
+    [normalizedEmail, normalizedEmail, role, study_program, normalizedCourse]
   )
 
   if (result.rows.length === 0) {
@@ -83,6 +112,8 @@ const updateUserStatus = async ({ userId, status }) => {
        email,
        role,
        status,
+       study_program,
+       course,
        created_at,
        activated_at,
        updated_at`,
@@ -131,10 +162,22 @@ const getAdminStatistics = async () => {
      ORDER BY module`
   )
 
+  const programsResult = await pool.query(
+    `SELECT
+       study_program,
+       course,
+       COUNT(*)::int AS students
+     FROM users
+     WHERE role = 'student'
+     GROUP BY study_program, course
+     ORDER BY study_program, course`
+  )
+
   return {
     users: usersResult.rows[0],
     results: resultsResult.rows[0],
     modules: modulesResult.rows,
+    programs: programsResult.rows,
   }
 }
 

@@ -102,6 +102,20 @@ function App() {
   const [password, setPassword] = useState("")
   const [authMessage, setAuthMessage] = useState("")
   const [authMessageType, setAuthMessageType] = useState("")
+  const [showAdmin, setShowAdmin] = useState(false)
+  const [adminUsers, setAdminUsers] = useState([])
+  const [adminStats, setAdminStats] = useState(null)
+  const [newUserEmail, setNewUserEmail] = useState("")
+  const [newUserRole, setNewUserRole] = useState("student")
+  const [adminMessage, setAdminMessage] = useState("")
+  const [adminMessageType, setAdminMessageType] = useState("")
+  const [newUserStudyProgram, setNewUserStudyProgram] = useState("")
+  const [newUserCourse, setNewUserCourse] = useState("")
+  const [userSearch, setUserSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [roleFilter, setRoleFilter] = useState("all")
+  const [programFilter, setProgramFilter] = useState("all")
+  const [courseFilter, setCourseFilter] = useState("all")
 
   useEffect(() => {
     fetch("http://localhost:3001/scenarios")
@@ -160,6 +174,12 @@ function App() {
     }
   }, [showResults, token])
 
+  useEffect(() => {
+    if (showAdmin && currentUser?.role === "admin") {
+      loadAdminData()
+    }
+  }, [showAdmin, token])
+
 const handleAuth = async () => {
   const endpoint = authMode === "login" ? "login" : "activate"
 
@@ -208,11 +228,136 @@ const handleLogout = () => {
   setToken("")
   setResults([])
   setShowResults(false)
+  setShowAdmin(false)
   setStarted(false)
   setSelectedModule(null)
+  setAdminUsers([])
+  setAdminStats(null)
+  setEmail("")
+  setPassword("")
   setAuthMessage("Logged out successfully.")
   setAuthMessageType("success")
 }
+
+const loadAdminData = async () => {
+  if (!token || currentUser?.role !== "admin") {
+    return
+  }
+
+  try {
+    const usersResponse = await fetch("http://localhost:3001/admin/users", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const usersData = await usersResponse.json()
+
+    if (!usersResponse.ok) {
+      setAdminMessage(usersData.message || "Failed to load users")
+      setAdminMessageType("error")
+      return
+    }
+
+    const statsResponse = await fetch("http://localhost:3001/admin/statistics", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const statsData = await statsResponse.json()
+
+    if (!statsResponse.ok) {
+      setAdminMessage(statsData.message || "Failed to load statistics")
+      setAdminMessageType("error")
+      return
+    }
+
+    setAdminUsers(usersData)
+    setAdminStats(statsData)
+  } catch (error) {
+    console.error(error)
+    setAdminMessage("Server connection error")
+    setAdminMessageType("error")
+  }
+}
+
+const handleCreateUser = async () => {
+  if (!newUserEmail) {
+    setAdminMessage("Email is required")
+    setAdminMessageType("error")
+    return
+  }
+
+  try {
+    const response = await fetch("http://localhost:3001/admin/users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        email: newUserEmail,
+        role: newUserRole,
+        study_program: newUserStudyProgram || null,
+        course: newUserCourse || null,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setAdminMessage(data.message || "Failed to create user")
+      setAdminMessageType("error")
+      return
+    }
+
+    setAdminMessage(`User ${data.email} added successfully`)
+    setAdminMessageType("success")
+    setNewUserEmail("")
+    setNewUserRole("student")
+    setNewUserStudyProgram("")
+    setNewUserCourse("")
+    loadAdminData()
+  } catch (error) {
+    console.error(error)
+    setAdminMessage("Server connection error")
+    setAdminMessageType("error")
+  }
+}
+
+const handleUpdateUserStatus = async (userId, status) => {
+  try {
+    const response = await fetch(
+      `http://localhost:3001/admin/users/${userId}/status`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setAdminMessage(data.message || "Failed to update status")
+      setAdminMessageType("error")
+      return
+    }
+
+    setAdminMessage(`Status updated for ${data.email}`)
+    setAdminMessageType("success")
+    loadAdminData()
+  } catch (error) {
+    console.error(error)
+    setAdminMessage("Server connection error")
+    setAdminMessageType("error")
+  }
+}
+
 
 const startModule = (moduleKey) => {
   if (!currentUser) {
@@ -281,6 +426,297 @@ const currentScenarios = selectedModule
     }
   }
 
+  const filteredAdminUsers = adminUsers.filter((user) => {
+    const matchesSearch =
+      user.email?.toLowerCase().includes(userSearch.toLowerCase())
+
+    const matchesStatus =
+      statusFilter === "all" || user.status === statusFilter
+
+    const matchesRole =
+      roleFilter === "all" || user.role === roleFilter
+
+    const matchesProgram =
+      programFilter === "all" || user.study_program === programFilter
+
+    const matchesCourse =
+      courseFilter === "all" || String(user.course) === courseFilter
+
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesRole &&
+      matchesProgram &&
+      matchesCourse
+    )
+  })
+
+const uniquePrograms = [
+  ...new Set(
+    adminUsers
+      .map((user) => user.study_program)
+      .filter((program) => Boolean(program))
+  ),
+]
+
+const uniqueCourses = [
+  ...new Set(
+    adminUsers
+      .map((user) => user.course)
+      .filter((course) => course !== null && course !== undefined)
+  ),
+]
+
+
+  if (showAdmin) {
+    return (
+      <div className="app">
+        <div className="admin-page">
+          <div className="admin-header">
+            <div>
+              <p className="scenario-label">Admin area</p>
+              <h2>University Management Panel</h2>
+              <p>
+                Manage student access, account statuses and monitor simulator
+                usage.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowAdmin(false)
+                setAdminMessage("")
+              }}
+            >
+              Back to homepage
+            </button>
+          </div>
+
+          {adminMessage && (
+            <p
+              className={`auth-message ${
+                adminMessageType === "error" ? "auth-error" : "auth-success"
+              }`}
+            >
+              {adminMessage}
+            </p>
+          )}
+
+          {adminStats && (
+            <div className="admin-stats-grid">
+              <div className="admin-stat-card">
+                <span>Total users</span>
+                <strong>{adminStats.users.total_users}</strong>
+              </div>
+
+              <div className="admin-stat-card">
+                <span>Active users</span>
+                <strong>{adminStats.users.active_users}</strong>
+              </div>
+
+              <div className="admin-stat-card">
+                <span>Invited users</span>
+                <strong>{adminStats.users.invited_users}</strong>
+              </div>
+
+              <div className="admin-stat-card">
+                <span>Total attempts</span>
+                <strong>{adminStats.results.total_attempts || 0}</strong>
+              </div>
+
+              <div className="admin-stat-card">
+                <span>Average score</span>
+                <strong>
+                  {adminStats.results.average_percentage || 0}%
+                </strong>
+              </div>
+            </div>
+          )}
+
+          <div className="admin-section">
+            <h3>Add university user</h3>
+
+            <div className="admin-form admin-form-wide">
+              <input
+                type="email"
+                placeholder="student@edu.hse.ru"
+                value={newUserEmail}
+                onChange={(event) => setNewUserEmail(event.target.value)}
+              />
+
+              <select
+                value={newUserRole}
+                onChange={(event) => setNewUserRole(event.target.value)}
+              >
+                <option value="student">student</option>
+                <option value="admin">admin</option>
+              </select>
+
+              <select
+                value={newUserStudyProgram}
+                onChange={(event) => setNewUserStudyProgram(event.target.value)}
+              >
+                <option value="">Study program</option>
+                <option value="Applied Informatics">Applied Informatics</option>
+                <option value="Software Engineering">Software Engineering</option>
+                <option value="Business Informatics">Business Informatics</option>
+                <option value="Data Science">Data Science</option>
+              </select>
+
+              <select
+                value={newUserCourse}
+                onChange={(event) => setNewUserCourse(event.target.value)}
+              >
+                <option value="">Course</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+
+              <button onClick={handleCreateUser}>Add user</button>
+            </div>
+          </div>
+
+          <div className="admin-section">
+            <h3>Users</h3>
+
+            <div className="admin-filters">
+              <input
+                type="text"
+                placeholder="Search by email"
+                value={userSearch}
+                onChange={(event) => setUserSearch(event.target.value)}
+              />
+
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                <option value="all">All statuses</option>
+                <option value="invited">invited</option>
+                <option value="active">active</option>
+                <option value="academic_leave">academic_leave</option>
+                <option value="graduated">graduated</option>
+                <option value="blocked">blocked</option>
+              </select>
+
+              <select
+                value={roleFilter}
+                onChange={(event) => setRoleFilter(event.target.value)}
+              >
+                <option value="all">All roles</option>
+                <option value="student">student</option>
+                <option value="admin">admin</option>
+              </select>
+
+              <select
+                value={programFilter}
+                onChange={(event) => setProgramFilter(event.target.value)}
+              >
+                <option value="all">All programs</option>
+                {uniquePrograms.map((program) => (
+                  <option key={program} value={program}>
+                    {program}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={courseFilter}
+                onChange={(event) => setCourseFilter(event.target.value)}
+              >
+                <option value="all">All courses</option>
+                {uniqueCourses.map((course) => (
+                  <option key={course} value={String(course)}>
+                    Course {course}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="admin-table-wrapper">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Study program</th>
+                    <th>Course</th>
+                    <th>Change status</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredAdminUsers.map((user) => (
+                    <tr key={user.id}>
+                      <td>{user.id}</td>
+                      <td>{user.email}</td>
+                      <td>{user.role}</td>
+                      <td>
+                        <span className={`status-badge status-${user.status}`}>
+                          {user.status}
+                        </span>
+                      </td>
+                      <td>{user.study_program || "—"}</td>
+                      <td>{user.course || "—"}</td>
+                      <td>
+                        <select
+                          value={user.status}
+                          onChange={(event) =>
+                            handleUpdateUserStatus(user.id, event.target.value)
+                          }
+                        >
+                          <option value="invited">invited</option>
+                          <option value="active">active</option>
+                          <option value="academic_leave">academic_leave</option>
+                          <option value="graduated">graduated</option>
+                          <option value="blocked">blocked</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {adminStats && (
+            <div className="admin-section">
+              <h3>Module statistics</h3>
+
+              <div className="admin-table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Module</th>
+                      <th>Attempts</th>
+                      <th>Average score</th>
+                      <th>Average percentage</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {adminStats.modules.map((module) => (
+                      <tr key={module.module}>
+                        <td>{module.module}</td>
+                        <td>{module.attempts}</td>
+                        <td>{module.average_score}</td>
+                        <td>{module.average_percentage}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   if (showResults) {
     return (
       <div className="app">
@@ -337,6 +773,18 @@ const currentScenarios = selectedModule
             <button className="secondary-button" onClick={() => setShowResults(true)}>
               View Results
             </button>
+
+            {currentUser?.role === "admin" && (
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setShowAdmin(true)
+                  setShowResults(false)
+                }}
+              >
+                Admin Panel
+              </button>
+            )}
           </div>
 
           <div className="auth-box">
@@ -378,7 +826,7 @@ const currentScenarios = selectedModule
 
             {currentUser && (
               <div className="user-panel">
-                <p>Signed in as {currentUser.username}</p>
+                <p>Signed in as {currentUser.email}</p>
                 <button onClick={handleLogout}>Logout</button>
               </div>
             )}

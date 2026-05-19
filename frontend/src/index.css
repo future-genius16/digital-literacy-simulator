@@ -371,3 +371,201 @@ button:hover {
     padding: 30px 24px;
   }
 }
+
+.admin-page {
+  width: 100%;
+  max-width: 1100px;
+  background: #ffffff;
+  padding: 34px;
+  border-radius: 26px;
+  box-shadow: 0 18px 45px rgba(31, 42, 68, 0.08);
+  border: 1px solid #e7ecf5;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.admin-header h2 {
+  font-size: 32px;
+  margin-bottom: 10px;
+  color: #17213a;
+}
+
+.admin-header p {
+  color: #5d6b89;
+  line-height: 1.5;
+}
+
+.admin-header button {
+  background: #eaf6f4;
+  color: #2f7f7b;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.admin-stat-card {
+  background: #f8fbff;
+  border: 1px solid #e3eaf5;
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.admin-stat-card span {
+  display: block;
+  color: #5d6b89;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.admin-stat-card strong {
+  font-size: 26px;
+  color: #17213a;
+}
+
+.admin-section {
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid #e7ecf5;
+}
+
+.admin-section h3 {
+  font-size: 22px;
+  margin-bottom: 16px;
+  color: #17213a;
+}
+
+.admin-form {
+  display: grid;
+  grid-template-columns: 1fr 160px 140px;
+  gap: 12px;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-table select {
+  padding: 12px 14px;
+  border: 1px solid #d8e0ef;
+  border-radius: 12px;
+  font-size: 14px;
+  background: #f9fbff;
+}
+
+.admin-form button {
+  background: #2f7f7b;
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.admin-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 14px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e7ecf5;
+}
+
+.admin-table th {
+  color: #5d6b89;
+  font-weight: 700;
+  background: #f8fbff;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-active {
+  background: #eefaf4;
+  color: #168348;
+}
+
+.status-invited {
+  background: #eef2ff;
+  color: #2f5bea;
+}
+
+.status-blocked {
+  background: #fff1f1;
+  color: #c0392b;
+}
+
+.status-academic_leave {
+  background: #fff7e6;
+  color: #9a6700;
+}
+
+.status-graduated {
+  background: #f1f4fb;
+  color: #34415f;
+}
+
+@media (max-width: 900px) {
+  .admin-header {
+    flex-direction: column;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-form-wide {
+  grid-template-columns: 1.4fr 130px 220px 110px 130px;
+}
+
+.admin-filters {
+  display: grid;
+  grid-template-columns: 1.4fr 160px 140px 220px 140px;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-filters input,
+.admin-filters select {
+  padding: 12px 14px;
+  border: 1px solid #d8e0ef;
+  border-radius: 12px;
+  font-size: 14px;
+  background: #f9fbff;
+}
+
+@media (max-width: 900px) {
+  .admin-form-wide,
+  .admin-filters {
+    grid-template-columns: 1fr;
+  }
+}
