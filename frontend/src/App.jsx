@@ -6,6 +6,8 @@ import ModuleCard from "./components/ModuleCard"
 import LevelCard from "./components/LevelCard"
 import AuthBox from "./components/AuthBox"
 import ScenarioRenderer from "./components/ScenarioRenderer"
+import { examTasks } from "./examTasks"
+import ExamTaskInfo from "./components/ExamTaskInfo"
 
 const modules = {
   phishing: [
@@ -90,92 +92,6 @@ const moduleTitles = {
   data: "Data Protection",
 }
 
-const examTasks = [
-  {
-    number: 1,
-    section: "theoretical",
-    title: "Безопасность. Поиск",
-    description: "Фишинг, спам, SMS-угрозы, разрешения приложений и безопасный поиск.",
-  },
-  {
-    number: 2,
-    section: "theoretical",
-    title: "Облачные хранилища",
-    description: "Уровни доступа, совместная работа, ссылки, история версий.",
-  },
-  {
-    number: 3,
-    section: "theoretical",
-    title: "Этика обмена информацией",
-    description: "Деловая переписка, почта, мессенджеры, спам и цифровая этика.",
-  },
-  {
-    number: 4,
-    section: "theoretical",
-    title: "Форматы файлов и программы",
-    description: "Форматы документов, таблиц, презентаций, изображений, архивов и программ.",
-  },
-  {
-    number: 5,
-    section: "theoretical",
-    title: "Цифровой след",
-    description: "Персональные данные, cookies, режим инкогнито, геопозиция и приватность.",
-  },
-  {
-    number: 6,
-    section: "theoretical",
-    title: "Безопасность цифровой личности",
-    description: "Пароли, 2FA, менеджеры паролей, жалобы на контент и цифровой баланс.",
-  },
-  {
-    number: 7,
-    section: "theoretical",
-    title: "Устройства и сеть",
-    description: "Порты, устройства, Wi-Fi, Bluetooth, HTTP/HTTPS, DNS, URL и cookies.",
-  },
-  {
-    number: 8,
-    section: "theoretical",
-    title: "Безопасность в сети",
-    description: "Вредоносное ПО, антивирус, обновления, резервные копии и защита сети.",
-  },
-  {
-    number: 9,
-    section: "theoretical",
-    title: "Переиспользование контента",
-    description: "Creative Commons, авторское право, общественное достояние и цитирование.",
-  },
-  {
-    number: 10,
-    section: "theoretical",
-    title: "Большие данные",
-    description: "Данные, машинное обучение, признаки, модели, выборки и ошибки.",
-  },
-  {
-    number: 11,
-    section: "practical",
-    title: "Кейс информационного поиска",
-    description: "Поиск источников, Google Scholar, справка, проводник и работа с файлами.",
-  },
-  {
-    number: 12,
-    section: "practical",
-    title: "Оформление документа",
-    description: "Форматирование документа по инструкции в офисном редакторе.",
-  },
-  {
-    number: 13,
-    section: "practical",
-    title: "Оформление презентации",
-    description: "Форматирование презентации и корректное использование заимствований.",
-  },
-  {
-    number: 14,
-    section: "practical",
-    title: "Обработка датасета",
-    description: "Формулы, функции, сортировка, фильтры и обработка таблиц.",
-  },
-]
 
 function App() {
   const [started, setStarted] = useState(false)
@@ -214,8 +130,19 @@ function App() {
   const [selectedLevel, setSelectedLevel] = useState(1)
   const [showLevels, setShowLevels] = useState(false)
   const [adminScenarios, setAdminScenarios] = useState([])
+  const [adminActiveTab, setAdminActiveTab] = useState("overview")
   const [scenarioForm, setScenarioForm] = useState({
-    module: "phishing",
+    module: "exam",
+    level: "1",
+    difficulty: "exam",
+    task_type: "single_choice",
+    exam_section: "theoretical",
+    exam_task_number: "1",
+    exam_task_title: "Безопасность. Поиск",
+    exam_topic:
+      "Антивирусная защита и её границы применимости; Фишинг; SMS-угрозы; Разрешения приложений; Магазины приложений; Спам и критерии спама; Поиск и ключевые слова.",
+    course_materials:
+      "Компьютерная безопасность: Спам в почте, социальных сетях и прочих платформах; Какой бывает спам; Социальные угрозы; Мошенничество и фишинг; Угрозы для Android и iOS. Академическая грамотность: Введение: как найти нужную статью. Компьютерная грамотность: Установка / Обновление.",
     title: "",
     text: "",
     option_a: "",
@@ -233,25 +160,35 @@ function App() {
       option_e: "",
     },
     explanation: "",
-    level: 1,
-    difficulty: "basic",
-    task_type: "single_choice",
-    digcomp_area: "Safety",
+    digcomp_area: "",
     digcomp_competence: "",
     learning_outcome: "",
   })
   const [selectedExamTask, setSelectedExamTask] = useState(null)
   const [showExamTasks, setShowExamTasks] = useState(false)
+  const [selectedExamInfoTask, setSelectedExamInfoTask] = useState(null)
+  const [examTasksFromServer, setExamTasksFromServer] = useState([])
   const [examSectionFilter, setExamSectionFilter] = useState("theoretical")
-  useEffect(() => {
-    fetch("http://localhost:3001/scenarios")
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("DATA FROM SERVER:", data)
-        setScenariosFromServer(data)
-      })
-      .catch((err) => console.error(err))
-  }, [])
+
+  const displayExamTasks = examTasks.map((localTask) => {
+    const serverTask = examTasksFromServer.find(
+      (item) => Number(item.task_number) === Number(localTask.number)
+    )
+
+    if (!serverTask) {
+      return localTask
+    }
+
+    return {
+      ...localTask,
+      number: serverTask.task_number,
+      section: serverTask.section,
+      title: serverTask.title,
+      description: serverTask.description,
+      knowledge: serverTask.knowledge || localTask.knowledge,
+      materials: serverTask.materials || localTask.materials,
+    }
+  })
 
   useEffect(() => {
   fetch("http://localhost:3001/scenarios")
@@ -291,24 +228,6 @@ useEffect(() => {
   }
 }, [finished, token])
 
-  useEffect(() => {
-    if (showResults && token) {
-      loadResults()
-    }
-  }, [showResults, token])
-
-  useEffect(() => {
-    if (showAdmin && currentUser?.role === "admin") {
-      loadAdminData()
-    }
-  }, [showAdmin, token])
-
-  useEffect(() => {
-    if (token && currentUser) {
-      loadProgress()
-      loadResults()
-    }
-  }, [token, currentUser])
 
 const handleAuth = async () => {
   const endpoint = authMode === "login" ? "login" : "activate"
@@ -452,6 +371,22 @@ const loadProgress = async () => {
   }
 }
 
+const loadExamTasks = async () => {
+  try {
+    const response = await fetch("http://localhost:3001/exam-tasks")
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error(data.message || "Не удалось загрузить информацию о заданиях НЭ.")
+      return
+    }
+
+    setExamTasksFromServer(data)
+  } catch (error) {
+    console.error("Ошибка загрузки информации о заданиях НЭ:", error)
+  }
+}
+
 const loadResults = async () => {
   if (!token) {
     return
@@ -477,9 +412,50 @@ const loadResults = async () => {
   }
 }
 
+  useEffect(() => {
+    if (showResults && token) {
+      loadResults()
+    }
+  }, [showResults, token])
+
+  useEffect(() => {
+    if (showAdmin && currentUser?.role === "admin") {
+      loadAdminData()
+    }
+  }, [showAdmin, token])
+
+  useEffect(() => {
+    loadExamTasks()
+  }, [])
+
+  useEffect(() => {
+    const selectedTask = displayExamTasks.find(
+      (task) => Number(task.number) === Number(scenarioForm.exam_task_number)
+    )
+
+    if (!selectedTask) {
+      return
+    }
+
+    setScenarioForm((prev) => ({
+      ...prev,
+      exam_section: selectedTask.section,
+      exam_task_title: selectedTask.title,
+      exam_topic: getExamTaskKnowledgeText(selectedTask),
+      course_materials: getExamTaskMaterialsText(selectedTask),
+    }))
+  }, [examTasksFromServer])
+
+  useEffect(() => {
+    if (token && currentUser) {
+      loadProgress()
+      loadResults()
+    }
+  }, [token, currentUser])
+
 const handleCreateUser = async () => {
   if (!newUserEmail) {
-    setAdminMessage("Email is required")
+    setAdminMessage("Введите email пользователя.")
     setAdminMessageType("error")
     return
   }
@@ -507,7 +483,7 @@ const handleCreateUser = async () => {
       return
     }
 
-    setAdminMessage(`User ${data.email} added successfully`)
+    setAdminMessage(`Пользователь ${data.email} успешно добавлен.`)
     setAdminMessageType("success")
     setNewUserEmail("")
     setNewUserRole("student")
@@ -516,7 +492,7 @@ const handleCreateUser = async () => {
     loadAdminData()
   } catch (error) {
     console.error(error)
-    setAdminMessage("Server connection error")
+    setAdminMessage("Ошибка соединения с сервером.")
     setAdminMessageType("error")
   }
 }
@@ -554,6 +530,23 @@ const handleUpdateUserStatus = async (userId, status) => {
 }
 
 const updateScenarioForm = (field, value) => {
+  if (field === "exam_task_number") {
+    const selectedTask = displayExamTasks.find(
+      (task) => Number(task.number) === Number(value)
+    )
+
+    setScenarioForm((prev) => ({
+      ...prev,
+      exam_task_number: value,
+      exam_section: selectedTask?.section || prev.exam_section,
+      exam_task_title: selectedTask?.title || prev.exam_task_title,
+      exam_topic: getExamTaskKnowledgeText(selectedTask),
+      course_materials: getExamTaskMaterialsText(selectedTask),
+    }))
+
+    return
+  }
+
   setScenarioForm((prev) => ({
     ...prev,
     [field]: value,
@@ -590,7 +583,9 @@ const handleCreateScenario = async () => {
 
   const payload = {
     ...scenarioForm,
-    level: Number(scenarioForm.level),
+    module: "exam",
+    level: 1,
+    exam_task_number: Number(scenarioForm.exam_task_number),
     correct_option: isMultiAnswer
       ? scenarioForm.correct_options[0]
       : scenarioForm.correct_option,
@@ -600,6 +595,9 @@ const handleCreateScenario = async () => {
   }
 
   if (
+    !payload.exam_task_number ||
+    !payload.exam_section ||
+    !payload.exam_task_title.trim() ||
     !payload.title.trim() ||
     !payload.text.trim() ||
     !payload.option_a.trim() ||
@@ -607,14 +605,14 @@ const handleCreateScenario = async () => {
     !payload.explanation.trim()
   ) {
     setAdminMessage(
-      "Please fill in title, scenario text, option A, option B and general explanation"
+      "Заполните номер задания НЭ, название задания НЭ, название вопроса, текст вопроса, варианты A/B и общее пояснение."
     )
     setAdminMessageType("error")
     return
   }
 
   if (isMultiAnswer && scenarioForm.correct_options.length === 0) {
-    setAdminMessage("Please select at least one correct option")
+    setAdminMessage("Выберите хотя бы один правильный вариант ответа.")
     setAdminMessageType("error")
     return
   }
@@ -632,16 +630,26 @@ const handleCreateScenario = async () => {
     const data = await response.json()
 
     if (!response.ok) {
-      setAdminMessage(data.message || "Failed to create scenario")
+      setAdminMessage(data.message || "Не удалось создать задание.")
       setAdminMessageType("error")
       return
     }
 
-    setAdminMessage(`Scenario "${data.title}" added successfully`)
+    setAdminMessage(`Задание "${data.title}" успешно создано.`)
     setAdminMessageType("success")
 
     setScenarioForm({
-      module: "phishing",
+      module: "exam",
+      level: "1",
+      difficulty: "exam",
+      task_type: "single_choice",
+      exam_section: "theoretical",
+      exam_task_number: "1",
+      exam_task_title: "Безопасность. Поиск",
+      exam_topic:
+        "Антивирусная защита и её границы применимости; Фишинг; SMS-угрозы; Разрешения приложений; Магазины приложений; Спам и критерии спама; Поиск и ключевые слова.",
+      course_materials:
+        "Компьютерная безопасность: Спам в почте, социальных сетях и прочих платформах; Какой бывает спам; Социальные угрозы; Мошенничество и фишинг; Угрозы для Android и iOS. Академическая грамотность: Введение: как найти нужную статью. Компьютерная грамотность: Установка / Обновление.",
       title: "",
       text: "",
       option_a: "",
@@ -659,10 +667,7 @@ const handleCreateScenario = async () => {
         option_e: "",
       },
       explanation: "",
-      level: 1,
-      difficulty: "basic",
-      task_type: "single_choice",
-      digcomp_area: "Safety",
+      digcomp_area: "",
       digcomp_competence: "",
       learning_outcome: "",
     })
@@ -733,7 +738,9 @@ const openExamTask = async (taskNumber) => {
     return
   }
 
-  const task = examTasks.find((item) => item.number === taskNumber)
+  const task = displayExamTasks.find(
+    (item) => Number(item.number) === Number(taskNumber)
+  )
 
   try {
     const response = await fetch(
@@ -906,6 +913,30 @@ const checkMultiSelectAnswer = () => {
   setShowExplanation(true)
 }
 
+  const optionLabels = {
+    option_a: "Вариант A",
+    option_b: "Вариант B",
+    option_c: "Вариант C",
+    option_d: "Вариант D",
+    option_e: "Вариант E",
+  }
+
+  const shouldShowOptionFeedback =
+    scenarioForm.task_type === "multi_select" ||
+    scenarioForm.task_type === "permission_check" ||
+    scenarioForm.task_type === "risk_analysis"
+
+  const getExamTaskKnowledgeText = (task) =>
+    task?.knowledge?.join("; ") || ""
+
+  const getExamTaskMaterialsText = (task) =>
+    task?.materials
+      ?.map(
+        (group) =>
+          `${group.category}: ${group.links.map((link) => link.title).join("; ")}`
+      )
+      .join(". ") || ""
+
   const filteredAdminUsers = adminUsers.filter((user) => {
     const matchesSearch =
       user.email?.toLowerCase().includes(userSearch.toLowerCase())
@@ -954,21 +985,49 @@ const uniqueCourses = [
         <div className="admin-page">
           <div className="admin-header">
             <div>
-              <p className="scenario-label">Admin area</p>
-              <h2>University Management Panel</h2>
+              <p className="scenario-label">Администрирование</p>
+              <h2>Панель администратора</h2>
               <p>
-                Manage student access, account statuses and monitor simulator
-                usage.
+                Управление студентами, заданиями НЭ и статистикой прохождения тренажёра.
               </p>
             </div>
 
             <button
               onClick={() => {
                 setShowAdmin(false)
-                setAdminMessage("")
               }}
             >
-              Back to homepage
+              Вернуться на главную
+            </button>
+          </div>
+
+          <div className="admin-tabs">
+            <button
+              className={adminActiveTab === "overview" ? "active-tab" : ""}
+              onClick={() => setAdminActiveTab("overview")}
+            >
+              Обзор
+            </button>
+
+            <button
+              className={adminActiveTab === "students" ? "active-tab" : ""}
+              onClick={() => setAdminActiveTab("students")}
+            >
+              Студенты
+            </button>
+
+            <button
+              className={adminActiveTab === "tasks" ? "active-tab" : ""}
+              onClick={() => setAdminActiveTab("tasks")}
+            >
+              Задания НЭ
+            </button>
+
+            <button
+              className={adminActiveTab === "create" ? "active-tab" : ""}
+              onClick={() => setAdminActiveTab("create")}
+            >
+              Создать задание
             </button>
           </div>
 
@@ -982,387 +1041,420 @@ const uniqueCourses = [
             </p>
           )}
 
-          {adminStats && (
-            <div className="admin-stats-grid">
-              <div className="admin-stat-card">
-                <span>Total users</span>
-                <strong>{adminStats.users.total_users}</strong>
-              </div>
+          {adminActiveTab === "overview" && (
+            <div className="admin-section">
+              {adminStats && (
+                <div className="admin-stats-grid">
+                  <div className="admin-stat-card">
+                    <span>Всего пользователей</span>
+                    <strong>{adminStats.users.total_users}</strong>
+                  </div>
 
-              <div className="admin-stat-card">
-                <span>Active users</span>
-                <strong>{adminStats.users.active_users}</strong>
-              </div>
+                  <div className="admin-stat-card">
+                    <span>Активные пользователи</span>
+                    <strong>{adminStats.users.active_users}</strong>
+                  </div>
 
-              <div className="admin-stat-card">
-                <span>Invited users</span>
-                <strong>{adminStats.users.invited_users}</strong>
-              </div>
+                  <div className="admin-stat-card">
+                    <span>Приглашённые пользователи</span>
+                    <strong>{adminStats.users.invited_users}</strong>
+                  </div>
 
-              <div className="admin-stat-card">
-                <span>Total attempts</span>
-                <strong>{adminStats.results.total_attempts || 0}</strong>
-              </div>
+                  <div className="admin-stat-card">
+                    <span>Всего попыток</span>
+                    <strong>{adminStats.results.total_attempts || 0}</strong>
+                  </div>
 
-              <div className="admin-stat-card">
-                <span>Average score</span>
-                <strong>
-                  {adminStats.results.average_percentage || 0}%
-                </strong>
+                  <div className="admin-stat-card">
+                    <span>Средний результат</span>
+                    <strong>{adminStats.results.average_percentage || 0}%</strong>
+                  </div>
+                </div>
+              )}
+
+              {!adminStats && (
+                <p className="muted-text">Статистика пока не загружена.</p>
+              )}
+            </div>
+          )}
+
+          {adminActiveTab === "students" && (
+            <div className="admin-section">
+              <h3>Добавить пользователя</h3>
+
+              <div className="admin-form admin-form-wide">
+                <input
+                  type="email"
+                  placeholder="student@edu.hse.ru"
+                  value={newUserEmail}
+                  onChange={(event) => setNewUserEmail(event.target.value)}
+                />
+
+                <select
+                  value={newUserRole}
+                  onChange={(event) => setNewUserRole(event.target.value)}
+                >
+                  <option value="student">Студент</option>
+                  <option value="admin">Администратор</option>
+                </select>
+
+                <select
+                  value={newUserStudyProgram}
+                  onChange={(event) => setNewUserStudyProgram(event.target.value)}
+                >
+                  <option value="">Направление подготовки</option>
+                  <option value="Applied Informatics">Прикладная информатика</option>
+                  <option value="Software Engineering">Программная инженерия</option>
+                  <option value="Business Informatics">Бизнес-информатика</option>
+                  <option value="Data Science">Data Science</option>
+                </select>
+
+                <select
+                  value={newUserCourse}
+                  onChange={(event) => setNewUserCourse(event.target.value)}
+                >
+                  <option value="">Курс</option>
+                  <option value="1">1 курс</option>
+                  <option value="2">2 курс</option>
+                  <option value="3">3 курс</option>
+                  <option value="4">4 курс</option>
+                </select>
+
+                <button onClick={handleCreateUser}>Добавить пользователя</button>
               </div>
             </div>
           )}
 
-          <div className="admin-section">
-            <h3>Add university user</h3>
-
-            <div className="admin-form admin-form-wide">
-              <input
-                type="email"
-                placeholder="student@edu.hse.ru"
-                value={newUserEmail}
-                onChange={(event) => setNewUserEmail(event.target.value)}
-              />
-
-              <select
-                value={newUserRole}
-                onChange={(event) => setNewUserRole(event.target.value)}
-              >
-                <option value="student">student</option>
-                <option value="admin">admin</option>
-              </select>
-
-              <select
-                value={newUserStudyProgram}
-                onChange={(event) => setNewUserStudyProgram(event.target.value)}
-              >
-                <option value="">Study program</option>
-                <option value="Applied Informatics">Applied Informatics</option>
-                <option value="Software Engineering">Software Engineering</option>
-                <option value="Business Informatics">Business Informatics</option>
-                <option value="Data Science">Data Science</option>
-              </select>
-
-              <select
-                value={newUserCourse}
-                onChange={(event) => setNewUserCourse(event.target.value)}
-              >
-                <option value="">Course</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-              </select>
-
-              <button onClick={handleCreateUser}>Add user</button>
-            </div>
-          </div>
-
-          <div className="admin-section">
-            <h3>Users</h3>
-
-            <div className="admin-filters">
-              <input
-                type="text"
-                placeholder="Search by email"
-                value={userSearch}
-                onChange={(event) => setUserSearch(event.target.value)}
-              />
-
-              <select
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-              >
-                <option value="all">All statuses</option>
-                <option value="invited">invited</option>
-                <option value="active">active</option>
-                <option value="academic_leave">academic_leave</option>
-                <option value="graduated">graduated</option>
-                <option value="blocked">blocked</option>
-              </select>
-
-              <select
-                value={roleFilter}
-                onChange={(event) => setRoleFilter(event.target.value)}
-              >
-                <option value="all">All roles</option>
-                <option value="student">student</option>
-                <option value="admin">admin</option>
-              </select>
-
-              <select
-                value={programFilter}
-                onChange={(event) => setProgramFilter(event.target.value)}
-              >
-                <option value="all">All programs</option>
-                {uniquePrograms.map((program) => (
-                  <option key={program} value={program}>
-                    {program}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={courseFilter}
-                onChange={(event) => setCourseFilter(event.target.value)}
-              >
-                <option value="all">All courses</option>
-                {uniqueCourses.map((course) => (
-                  <option key={course} value={String(course)}>
-                    Course {course}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="admin-table-wrapper">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Study program</th>
-                    <th>Course</th>
-                    <th>Change status</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredAdminUsers.map((user) => (
-                    <tr key={user.id}>
-                      <td>{user.id}</td>
-                      <td>{user.email}</td>
-                      <td>{user.role}</td>
-                      <td>
-                        <span className={`status-badge status-${user.status}`}>
-                          {user.status}
-                        </span>
-                      </td>
-                      <td>{user.study_program || "—"}</td>
-                      <td>{user.course || "—"}</td>
-                      <td>
-                        <select
-                          value={user.status}
-                          onChange={(event) =>
-                            handleUpdateUserStatus(user.id, event.target.value)
-                          }
-                        >
-                          <option value="invited">invited</option>
-                          <option value="active">active</option>
-                          <option value="academic_leave">academic_leave</option>
-                          <option value="graduated">graduated</option>
-                          <option value="blocked">blocked</option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="admin-section">
-            <h3>Scenario Management</h3>
-            {adminMessage && (
-              <p
-                className={`auth-message scenario-admin-message ${
-                  adminMessageType === "error" ? "auth-error" : "auth-success"
-                }`}
-              >
-                {adminMessage}
-              </p>
-            )}
-            <div className="scenario-admin-form">
-              <div className="scenario-form-row">
-                <select
-                  value={scenarioForm.module}
-                  onChange={(event) => updateScenarioForm("module", event.target.value)}
-                >
-                  <option value="phishing">phishing</option>
-                  <option value="info">info</option>
-                  <option value="data">data</option>
-                </select>
-
-                <select
-                  value={scenarioForm.level}
-                  onChange={(event) => updateScenarioForm("level", event.target.value)}
-                >
-                  <option value="1">Level 1</option>
-                  <option value="2">Level 2</option>
-                  <option value="3">Level 3</option>
-                </select>
-
-                <select
-                  value={scenarioForm.difficulty}
-                  onChange={(event) =>
-                    updateScenarioForm("difficulty", event.target.value)
-                  }
-                >
-                  <option value="basic">basic</option>
-                  <option value="intermediate">intermediate</option>
-                  <option value="advanced">advanced</option>
-                </select>
-
-                <select
-                  value={scenarioForm.task_type}
-                  onChange={(event) =>
-                    updateScenarioForm("task_type", event.target.value)
-                  }
-                >
-                  <option value="single_choice">single_choice</option>
-                  <option value="multi_select">multi_select</option>
-                  <option value="risk_analysis">risk_analysis</option>
-                  <option value="permission_check">permission_check</option>
-                </select>
-              </div>
-
-              <input
-                type="text"
-                placeholder="Scenario title"
-                value={scenarioForm.title}
-                onChange={(event) => updateScenarioForm("title", event.target.value)}
-              />
-
-              <textarea
-                placeholder="Scenario text"
-                value={scenarioForm.text}
-                onChange={(event) => updateScenarioForm("text", event.target.value)}
-              />
-
-              <div className="scenario-options-grid">
-                {["option_a", "option_b", "option_c", "option_d", "option_e"].map(
-                  (optionKey) => (
-                    <div key={optionKey} className="scenario-option-editor">
-                      <label>{optionKey}</label>
-
-                      <input
-                        type="text"
-                        placeholder={`Text for ${optionKey}`}
-                        value={scenarioForm[optionKey]}
-                        onChange={(event) =>
-                          updateScenarioForm(optionKey, event.target.value)
-                        }
-                      />
-
-                      <textarea
-                        placeholder={`Feedback for ${optionKey}`}
-                        value={scenarioForm.option_feedback[optionKey]}
-                        onChange={(event) =>
-                          updateScenarioFeedback(optionKey, event.target.value)
-                        }
-                      />
-
-                      {scenarioForm.task_type === "multi_select" ||
-                      scenarioForm.task_type === "permission_check" ? (
-                        <label className="correct-option-control">
-                          <input
-                            type="checkbox"
-                            checked={scenarioForm.correct_options.includes(optionKey)}
-                            onChange={() => toggleCorrectOption(optionKey)}
-                          />
-                          Correct
-                        </label>
-                      ) : (
-                        <label className="correct-option-control">
-                          <input
-                            type="radio"
-                            name="correct_option"
-                            checked={scenarioForm.correct_option === optionKey}
-                            onChange={() =>
-                              updateScenarioForm("correct_option", optionKey)
-                            }
-                          />
-                          Correct
-                        </label>
-                      )}
-                    </div>
-                  )
-                )}
-              </div>
-
-              <textarea
-                placeholder="General explanation"
-                value={scenarioForm.explanation}
-                onChange={(event) =>
-                  updateScenarioForm("explanation", event.target.value)
-                }
-              />
-
-              <div className="scenario-form-row">
-                <input
-                  type="text"
-                  placeholder="DigComp area"
-                  value={scenarioForm.digcomp_area}
-                  onChange={(event) =>
-                    updateScenarioForm("digcomp_area", event.target.value)
-                  }
-                />
-
-                <input
-                  type="text"
-                  placeholder="DigComp competence"
-                  value={scenarioForm.digcomp_competence}
-                  onChange={(event) =>
-                    updateScenarioForm("digcomp_competence", event.target.value)
-                  }
-                />
-
-                <input
-                  type="text"
-                  placeholder="Learning outcome"
-                  value={scenarioForm.learning_outcome}
-                  onChange={(event) =>
-                    updateScenarioForm("learning_outcome", event.target.value)
-                  }
-                />
-              </div>
-
-              <button onClick={handleCreateScenario}>Add scenario</button>
-            </div>
-
-            <div className="admin-table-wrapper scenario-list">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Module</th>
-                    <th>Level</th>
-                    <th>Type</th>
-                    <th>Title</th>
-                    <th>Active</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {adminScenarios.map((scenario) => (
-                    <tr key={scenario.id}>
-                      <td>{scenario.id}</td>
-                      <td>{scenario.module}</td>
-                      <td>{scenario.level}</td>
-                      <td>{scenario.task_type}</td>
-                      <td>{scenario.title}</td>
-                      <td>{scenario.is_active ? "Yes" : "No"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {adminStats && (
+          {adminActiveTab === "students" && (
             <div className="admin-section">
-              <h3>Module statistics</h3>
+              <h3>Студенты</h3>
+
+              <div className="admin-filters">
+                <input
+                  type="text"
+                  placeholder="Поиск по email"
+                  value={userSearch}
+                  onChange={(event) => setUserSearch(event.target.value)}
+                />
+
+                <select
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                >
+                  <option value="all">Все статусы</option>
+                  <option value="invited">Приглашён</option>
+                  <option value="active">Активен</option>
+                  <option value="academic_leave">Академический отпуск</option>
+                  <option value="graduated">Выпускник</option>
+                  <option value="blocked">Заблокирован</option>
+                </select>
+
+                <select
+                  value={roleFilter}
+                  onChange={(event) => setRoleFilter(event.target.value)}
+                >
+                  <option value="all">Все роли</option>
+                  <option value="student">Студент</option>
+                  <option value="admin">Администратор</option>
+                </select>
+
+                <select
+                  value={programFilter}
+                  onChange={(event) => setProgramFilter(event.target.value)}
+                >
+                  <option value="all">Все направления</option>
+                  {uniquePrograms.map((program) => (
+                    <option key={program} value={program}>
+                      {program}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={courseFilter}
+                  onChange={(event) => setCourseFilter(event.target.value)}
+                >
+                  <option value="all">Все курсы</option>
+                  {uniqueCourses.map((course) => (
+                    <option key={course} value={String(course)}>
+                      {course} курс
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div className="admin-table-wrapper">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Module</th>
-                      <th>Attempts</th>
-                      <th>Average score</th>
-                      <th>Average percentage</th>
+                      <th>ID</th>
+                      <th>Email</th>
+                      <th>Роль</th>
+                      <th>Статус</th>
+                      <th>Направление</th>
+                      <th>Курс</th>
+                      <th>Изменить статус</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {filteredAdminUsers.map((user) => (
+                      <tr key={user.id}>
+                        <td>{user.id}</td>
+                        <td>{user.email}</td>
+                        <td>{user.role === "admin" ? "Администратор" : "Студент"}</td>
+                        <td>
+                          <span className={`status-badge status-${user.status}`}>
+                            {user.status === "invited"
+                              ? "Приглашён"
+                              : user.status === "active"
+                              ? "Активен"
+                              : user.status === "academic_leave"
+                              ? "Академический отпуск"
+                              : user.status === "graduated"
+                              ? "Выпускник"
+                              : user.status === "blocked"
+                              ? "Заблокирован"
+                              : user.status}
+                          </span>
+                        </td>
+                        <td>{user.study_program || "—"}</td>
+                        <td>{user.course || "—"}</td>
+                        <td>
+                          <select
+                            value={user.status}
+                            onChange={(event) =>
+                              handleUpdateUserStatus(user.id, event.target.value)
+                            }
+                          >
+                            <option value="invited">Приглашён</option>
+                            <option value="active">Активен</option>
+                            <option value="academic_leave">Академический отпуск</option>
+                            <option value="graduated">Выпускник</option>
+                            <option value="blocked">Заблокирован</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {adminActiveTab === "create" && (
+            <div className="admin-section">
+              <h3>Создать задание НЭ</h3>
+
+              <div className="scenario-admin-form">
+                <div className="scenario-form-block">
+                  <h4>Привязка к экзамену</h4>
+
+                  <label className="admin-field-label">
+                    Номер задания НЭ
+                    <select
+                      value={scenarioForm.exam_task_number}
+                      onChange={(event) =>
+                        updateScenarioForm("exam_task_number", event.target.value)
+                      }
+                    >
+                      {displayExamTasks.map((task) => (
+                        <option key={task.number} value={String(task.number)}>
+                          Задание {task.number}. {task.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="admin-field-label">
+                    Часть экзамена
+                    <input
+                      type="text"
+                      value={
+                        scenarioForm.exam_section === "theoretical"
+                          ? "Теоретическая часть"
+                          : "Практическая часть"
+                      }
+                      readOnly
+                    />
+                  </label>
+
+                  <label className="admin-field-label">
+                    Название задания НЭ
+                    <input type="text" value={scenarioForm.exam_task_title} readOnly />
+                  </label>
+
+                  <label className="admin-field-label">
+                    Проверяемые темы
+                    <textarea value={scenarioForm.exam_topic} readOnly />
+                  </label>
+
+                  <label className="admin-field-label">
+                    Материалы онлайн-курса
+                    <textarea value={scenarioForm.course_materials} readOnly />
+                  </label>
+                </div>
+
+                <div className="scenario-form-block">
+                  <h4>Содержание вопроса</h4>
+
+                  <label className="admin-field-label">
+                    Тип вопроса
+                    <select
+                      value={scenarioForm.task_type}
+                      onChange={(event) =>
+                        updateScenarioForm("task_type", event.target.value)
+                      }
+                    >
+                      <option value="single_choice">Один правильный ответ</option>
+                      <option value="multi_select">Несколько правильных ответов</option>
+                      <option value="risk_analysis">Оценка риска</option>
+                      <option value="permission_check">Проверка разрешений</option>
+                    </select>
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="Название вопроса"
+                    value={scenarioForm.title}
+                    onChange={(event) => updateScenarioForm("title", event.target.value)}
+                  />
+
+                  <textarea
+                    placeholder="Текст вопроса"
+                    value={scenarioForm.text}
+                    onChange={(event) => updateScenarioForm("text", event.target.value)}
+                  />
+                </div>
+
+                <div className="scenario-form-block">
+                  <h4>Варианты ответа</h4>
+
+                  <div className="scenario-options-grid">
+                    {["option_a", "option_b", "option_c", "option_d", "option_e"].map(
+                      (optionKey) => (
+                        <div key={optionKey} className="scenario-option-editor">
+                          <label>{optionLabels[optionKey]}</label>
+
+                          <input
+                            type="text"
+                            placeholder={`Текст для ${optionLabels[optionKey]}`}
+                            value={scenarioForm[optionKey]}
+                            onChange={(event) =>
+                              updateScenarioForm(optionKey, event.target.value)
+                            }
+                          />
+
+                          {shouldShowOptionFeedback && (
+                            <textarea
+                              placeholder={`Пояснение для ${optionLabels[optionKey]}`}
+                              value={scenarioForm.option_feedback[optionKey]}
+                              onChange={(event) =>
+                                updateScenarioFeedback(optionKey, event.target.value)
+                              }
+                            />
+                          )}
+
+                          {scenarioForm.task_type === "multi_select" ||
+                          scenarioForm.task_type === "permission_check" ? (
+                            <label className="correct-option-control">
+                              <input
+                                type="checkbox"
+                                checked={scenarioForm.correct_options.includes(optionKey)}
+                                onChange={() => toggleCorrectOption(optionKey)}
+                              />
+                              Правильный вариант
+                            </label>
+                          ) : (
+                            <label className="correct-option-control">
+                              <input
+                                type="radio"
+                                name="correct_option"
+                                checked={scenarioForm.correct_option === optionKey}
+                                onChange={() =>
+                                  updateScenarioForm("correct_option", optionKey)
+                                }
+                              />
+                              Правильный вариант
+                            </label>
+                          )}
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                <div className="scenario-form-block">
+                  <h4>Пояснение</h4>
+
+                  <textarea
+                    placeholder="Общее пояснение к заданию"
+                    value={scenarioForm.explanation}
+                    onChange={(event) =>
+                      updateScenarioForm("explanation", event.target.value)
+                    }
+                  />
+                </div>
+
+                <button onClick={handleCreateScenario}>Добавить задание</button>
+              </div>
+            </div>
+          )}
+
+          {adminActiveTab === "tasks" && (
+            <div className="admin-section">
+              <h3>Задания НЭ</h3>
+
+              <div className="admin-table-wrapper scenario-list">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>№ НЭ</th>
+                      <th>Раздел</th>
+                      <th>Тип</th>
+                      <th>Название</th>
+                      <th>Активно</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {adminScenarios
+                      .filter((scenario) => scenario.module === "exam")
+                      .map((scenario) => (
+                        <tr key={scenario.id}>
+                          <td>{scenario.id}</td>
+                          <td>{scenario.exam_task_number || "—"}</td>
+                          <td>
+                            {scenario.exam_section === "theoretical"
+                              ? "Теория"
+                              : scenario.exam_section === "practical"
+                              ? "Практика"
+                              : "—"}
+                          </td>
+                          <td>{scenario.task_type}</td>
+                          <td>{scenario.title}</td>
+                          <td>{scenario.is_active ? "Да" : "Нет"}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {adminActiveTab === "overview" && adminStats && (
+            <div className="admin-section">
+              <h3>Статистика по разделам</h3>
+
+              <div className="admin-table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Раздел</th>
+                      <th>Попытки</th>
+                      <th>Средний балл</th>
+                      <th>Средний процент</th>
                     </tr>
                   </thead>
 
@@ -1385,12 +1477,25 @@ const uniqueCourses = [
     )
   }
 
+if (selectedExamInfoTask) {
+  return (
+    <ExamTaskInfo
+      task={selectedExamInfoTask}
+      onBack={() => setSelectedExamInfoTask(null)}
+      onStartTraining={(taskNumber) => {
+        setSelectedExamInfoTask(null)
+        openExamTask(taskNumber)
+      }}
+    />
+  )
+}
+
 if (showResults) {
   return (
     <ResultsPage
       currentUser={currentUser}
       results={results}
-      examTasks={examTasks}
+      examTasks={displayExamTasks}
       onBack={() => setShowResults(false)}
       openExamTask={openExamTask}
     />
@@ -1473,7 +1578,7 @@ if (showResults) {
                   setShowResults(false)
                 }}
               >
-                Admin Panel
+                Панель администратора
               </button>
             )}
           </div>
@@ -1498,7 +1603,7 @@ if (showResults) {
             <UserDashboard
               currentUser={currentUser}
               results={results}
-              examTasks={examTasks}
+              examTasks={displayExamTasks}
               openExamTask={openExamTask}
             />
           )}
@@ -1527,7 +1632,7 @@ if (showResults) {
           </div>
 
           <div className="exam-task-grid">
-            {examTasks
+            {displayExamTasks
               .filter((task) => task.section === examSectionFilter)
               .map((task) => (
                 <div key={task.number} className="exam-task-card">
@@ -1539,9 +1644,19 @@ if (showResults) {
                   <h3>{task.title}</h3>
                   <p>{task.description}</p>
 
-                  <button onClick={() => openExamTask(task.number)}>
-                    Начать тренировку
-                  </button>
+                  <div className="exam-task-actions">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => setSelectedExamInfoTask(task)}
+                    >
+                      О задании
+                    </button>
+
+                    <button onClick={() => openExamTask(task.number)}>
+                      Начать тренировку
+                    </button>
+                  </div>
                 </div>
               ))}
           </div>
