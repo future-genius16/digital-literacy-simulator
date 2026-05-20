@@ -3,6 +3,7 @@ function ScenarioRenderer({
   currentScenarioIndex,
   currentScenariosLength,
   selectedLevel,
+  selectedExamTask,
   selectedAnswer,
   selectedAnswers,
   showExplanation,
@@ -16,8 +17,10 @@ function ScenarioRenderer({
     <div className="app">
       <div className="scenario">
         <p className="scenario-label">
-          Level {selectedLevel} · Scenario {currentScenarioIndex + 1} of{" "}
-          {currentScenariosLength}
+          {selectedExamTask
+            ? `Задание ${selectedExamTask.number}. ${selectedExamTask.title}`
+            : `Уровень ${selectedLevel}`}{" "}
+        · Вопрос {currentScenarioIndex + 1} из {currentScenariosLength}
         </p>
 
         <h2>{currentScenario.title}</h2>
@@ -26,18 +29,18 @@ function ScenarioRenderer({
 
         <h3>
           {currentScenario.task_type === "risk_analysis"
-            ? "How would you assess the risk?"
+            ? "Как вы оцените уровень риска?"
             : currentScenario.task_type === "permission_check"
-            ? "Which permissions should be allowed?"
-            : "What would you do?"}
+            ? "Какие разрешения следует предоставить?"
+            : "Выберите ответ"}
         </h3>
 
         {isMultiAnswerTask(currentScenario.task_type) ? (
           <>
             <div className="multi-select-hint">
               {currentScenario.task_type === "permission_check"
-                ? "Select all permissions that should be allowed, then click “Check answer”."
-                : "Select all correct options, then click “Check answer”."}
+                ? "Выберите все разрешения, которые следует предоставить, затем нажмите «Проверить ответ»."
+                : "Выберите все правильные варианты, затем нажмите «Проверить ответ»."}
             </div>
 
             <div className="answers">
@@ -66,25 +69,25 @@ function ScenarioRenderer({
                     <span className="answer-badges">
                       {showExplanation && option.isCorrect && (
                         <span className="answer-badge correct-badge">
-                          Correct answer
+                          Правильный ответ
                         </span>
                       )}
 
                       {showExplanation && isSelected && (
                         <span className="answer-badge selected-badge">
-                          Your choice
+                          Ваш выбор
                         </span>
                       )}
 
                       {showExplanation && option.isCorrect && !isSelected && (
                         <span className="answer-badge missed-badge">
-                          Missed
+                          Пропущено
                         </span>
                       )}
 
                       {showExplanation && isSelected && !option.isCorrect && (
                         <span className="answer-badge wrong-badge">
-                          Wrong choice
+                          Ошибочный выбор
                         </span>
                       )}
                     </span>
@@ -99,7 +102,7 @@ function ScenarioRenderer({
                 disabled={selectedAnswers.length === 0}
                 onClick={checkMultiSelectAnswer}
               >
-                Check answer
+                Проверить ответ
               </button>
             )}
           </>
@@ -129,12 +132,12 @@ function ScenarioRenderer({
         {showExplanation && (
           <div className="feedback-box">
             <p className={selectedAnswer ? "correct" : "wrong"}>
-              {selectedAnswer ? "✅ Correct!" : "❌ Incorrect."}
+              {selectedAnswer ? "✅ Верно!" : "❌ Неверно."}
             </p>
 
             {isMultiAnswerTask(currentScenario.task_type) && (
               <div className="correct-answers-box">
-                <strong>Answer breakdown:</strong>
+                <strong>Разбор ответа:</strong>
 
                 <ul>
                   {currentScenario.options
@@ -152,9 +155,9 @@ function ScenarioRenderer({
                           <span>
                             {option.isCorrect &&
                               isSelected &&
-                              "✅ Correct choice: "}
-                            {isMissed && "⚠️ Missed correct answer: "}
-                            {isWrongChoice && "❌ Wrong choice: "}
+                              "✅ Верный выбор: "}
+                            {isMissed && "⚠️ Пропущенный верный ответ: "}
+                            {isWrongChoice && "❌ Ошибочный выбор: "}
                             <strong>{option.text}</strong>
                           </span>
 
@@ -173,7 +176,7 @@ function ScenarioRenderer({
             <p>{currentScenario.explanation}</p>
 
             <button className="next-button" onClick={handleNextScenario}>
-              Next scenario
+              Следующий вопрос
             </button>
           </div>
         )}

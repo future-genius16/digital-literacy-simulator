@@ -90,6 +90,93 @@ const moduleTitles = {
   data: "Data Protection",
 }
 
+const examTasks = [
+  {
+    number: 1,
+    section: "theoretical",
+    title: "Безопасность. Поиск",
+    description: "Фишинг, спам, SMS-угрозы, разрешения приложений и безопасный поиск.",
+  },
+  {
+    number: 2,
+    section: "theoretical",
+    title: "Облачные хранилища",
+    description: "Уровни доступа, совместная работа, ссылки, история версий.",
+  },
+  {
+    number: 3,
+    section: "theoretical",
+    title: "Этика обмена информацией",
+    description: "Деловая переписка, почта, мессенджеры, спам и цифровая этика.",
+  },
+  {
+    number: 4,
+    section: "theoretical",
+    title: "Форматы файлов и программы",
+    description: "Форматы документов, таблиц, презентаций, изображений, архивов и программ.",
+  },
+  {
+    number: 5,
+    section: "theoretical",
+    title: "Цифровой след",
+    description: "Персональные данные, cookies, режим инкогнито, геопозиция и приватность.",
+  },
+  {
+    number: 6,
+    section: "theoretical",
+    title: "Безопасность цифровой личности",
+    description: "Пароли, 2FA, менеджеры паролей, жалобы на контент и цифровой баланс.",
+  },
+  {
+    number: 7,
+    section: "theoretical",
+    title: "Устройства и сеть",
+    description: "Порты, устройства, Wi-Fi, Bluetooth, HTTP/HTTPS, DNS, URL и cookies.",
+  },
+  {
+    number: 8,
+    section: "theoretical",
+    title: "Безопасность в сети",
+    description: "Вредоносное ПО, антивирус, обновления, резервные копии и защита сети.",
+  },
+  {
+    number: 9,
+    section: "theoretical",
+    title: "Переиспользование контента",
+    description: "Creative Commons, авторское право, общественное достояние и цитирование.",
+  },
+  {
+    number: 10,
+    section: "theoretical",
+    title: "Большие данные",
+    description: "Данные, машинное обучение, признаки, модели, выборки и ошибки.",
+  },
+  {
+    number: 11,
+    section: "practical",
+    title: "Кейс информационного поиска",
+    description: "Поиск источников, Google Scholar, справка, проводник и работа с файлами.",
+  },
+  {
+    number: 12,
+    section: "practical",
+    title: "Оформление документа",
+    description: "Форматирование документа по инструкции в офисном редакторе.",
+  },
+  {
+    number: 13,
+    section: "practical",
+    title: "Оформление презентации",
+    description: "Форматирование презентации и корректное использование заимствований.",
+  },
+  {
+    number: 14,
+    section: "practical",
+    title: "Обработка датасета",
+    description: "Формулы, функции, сортировка, фильтры и обработка таблиц.",
+  },
+]
+
 function App() {
   const [started, setStarted] = useState(false)
   const [selectedModule, setSelectedModule] = useState(null)
@@ -153,7 +240,9 @@ function App() {
     digcomp_competence: "",
     learning_outcome: "",
   })
-
+  const [selectedExamTask, setSelectedExamTask] = useState(null)
+  const [showExamTasks, setShowExamTasks] = useState(false)
+  const [examSectionFilter, setExamSectionFilter] = useState("theoretical")
   useEffect(() => {
     fetch("http://localhost:3001/scenarios")
       .then((res) => res.json())
@@ -187,6 +276,9 @@ useEffect(() => {
         level: selectedLevel,
         score,
         total_questions: currentScenarios.length,
+        exam_section: selectedExamTask?.section || null,
+        exam_task_number: selectedExamTask?.number || null,
+        exam_task_title: selectedExamTask?.title || null,
       }),
     })
       .then((res) => res.json())
@@ -634,13 +726,61 @@ const openModuleLevels = (moduleName) => {
   setShowAdmin(false)
 }
 
+const openExamTask = async (taskNumber) => {
+  if (!currentUser) {
+    setAuthMessage("Сначала войдите в систему.")
+    setAuthMessageType("error")
+    return
+  }
+
+  const task = examTasks.find((item) => item.number === taskNumber)
+
+  try {
+    const response = await fetch(
+      `http://localhost:3001/scenarios?exam_task_number=${taskNumber}`
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setAuthMessage(data.message || "Не удалось загрузить задания.")
+      setAuthMessageType("error")
+      return
+    }
+
+    if (data.length === 0) {
+      setAuthMessage("Для этого раздела пока нет тренировочных заданий.")
+      setAuthMessageType("error")
+      return
+    }
+
+    setScenariosFromServer(data)
+    setSelectedExamTask(task)
+    setSelectedModule("exam")
+    setSelectedLevel(1)
+    setCurrentScenarioIndex(0)
+    setSelectedAnswer(null)
+    setSelectedAnswers([])
+    setShowExplanation(false)
+    setFinished(false)
+    setScore(0)
+    setStarted(true)
+  } catch (error) {
+    console.error(error)
+    setAuthMessage("Ошибка соединения с сервером.")
+    setAuthMessageType("error")
+  }
+}
+
 const currentScenarios = selectedModule
   ? scenariosFromServer
-      .filter(
-        (scenario) =>
-          scenario.module === selectedModule &&
-          Number(scenario.level || 1) === Number(selectedLevel)
-      )
+      .filter((scenario) => {
+        if (selectedModule === "exam") {
+          return Number(scenario.exam_task_number) === selectedExamTask?.number
+        }
+
+        return scenario.module === selectedModule
+      })
       .map((scenario) => ({
         ...scenario,
         options: [
@@ -1250,8 +1390,9 @@ if (showResults) {
     <ResultsPage
       currentUser={currentUser}
       results={results}
-      moduleTitles={moduleTitles}
+      examTasks={examTasks}
       onBack={() => setShowResults(false)}
+      openExamTask={openExamTask}
     />
   )
 }
@@ -1356,38 +1497,53 @@ if (showResults) {
           {currentUser && (
             <UserDashboard
               currentUser={currentUser}
-              progress={progress}
               results={results}
-              moduleTitles={moduleTitles}
-              openModuleLevels={openModuleLevels}
+              examTasks={examTasks}
+              openExamTask={openExamTask}
             />
           )}
         </div>
 
         <div className="modules">
-          <h2>Modules</h2>
+          <h2>Подготовка к НЭ по цифровой грамотности</h2>
+          <p className="modules-subtitle">
+            Выберите раздел экзамена и начните тренировку по конкретному заданию.
+          </p>
 
-          <div className="module-list">
-            <ModuleCard
-              icon="📰"
-              title="Information Evaluation"
-              description="Learn how to identify fake news and unreliable sources."
-              onStart={() => openModuleLevels("info")}
-            />
+          <div className="exam-section-tabs">
+            <button
+              className={examSectionFilter === "theoretical" ? "active-tab" : ""}
+              onClick={() => setExamSectionFilter("theoretical")}
+            >
+              Теоретическая часть
+            </button>
 
-            <ModuleCard
-              icon="🛡️"
-              title="Phishing & Threats"
-              description="Recognize phishing emails and online security risks."
-              onStart={() => openModuleLevels("phishing")}
-            />
+            <button
+              className={examSectionFilter === "practical" ? "active-tab" : ""}
+              onClick={() => setExamSectionFilter("practical")}
+            >
+              Практическая часть
+            </button>
+          </div>
 
-            <ModuleCard
-              icon="🔐"
-              title="Data Protection"
-              description="Understand how to protect your personal information online."
-              onStart={() => openModuleLevels("data")}
-            />
+          <div className="exam-task-grid">
+            {examTasks
+              .filter((task) => task.section === examSectionFilter)
+              .map((task) => (
+                <div key={task.number} className="exam-task-card">
+                  <span>
+                    Задание {task.number} ·{" "}
+                    {task.section === "theoretical" ? "теория" : "практика"}
+                  </span>
+
+                  <h3>{task.title}</h3>
+                  <p>{task.description}</p>
+
+                  <button onClick={() => openExamTask(task.number)}>
+                    Начать тренировку
+                  </button>
+                </div>
+              ))}
           </div>
         </div>
       </div>
@@ -1395,19 +1551,34 @@ if (showResults) {
   }
 
   if (finished) {
+    const percentage =
+      currentScenarios.length > 0
+        ? Math.round((score / currentScenarios.length) * 100)
+        : 0
+
     return (
       <div className="app">
         <div className="scenario">
-          <h2>Level completed</h2>
-          <p>
-            You have completed Level {selectedLevel} of the{" "}
-            {moduleTitles[selectedModule]} module.
+          <p className="scenario-label">
+            {selectedExamTask
+              ? `Задание ${selectedExamTask.number}. ${selectedExamTask.title}`
+              : `Уровень ${selectedLevel}`}
           </p>
+
+          <h2>Тренировка завершена</h2>
+
           <p>
-            Your score: {score} / {currentScenarios.length}
+            Вы ответили правильно на {score} из {currentScenarios.length} вопросов.
           </p>
+
+          <p>
+            Результат: <strong>{percentage}%</strong>
+          </p>
+
           <p className="level-note">
-            Score of 80% or higher unlocks the next level.
+            {percentage >= 80
+              ? "Отличный результат. Раздел можно считать подготовленным."
+              : "Рекомендуется повторить тему и пройти тренировку ещё раз."}
           </p>
 
           <button
@@ -1419,16 +1590,24 @@ if (showResults) {
               setShowExplanation(false)
               setFinished(false)
               setScore(0)
-              setShowLevels(true)
+
+              if (selectedExamTask) {
+                setSelectedExamTask(null)
+                setShowLevels(false)
+              } else {
+                setShowLevels(true)
+              }
+
               loadProgress()
+              loadResults()
             }}
           >
-            Back to levels
+            {selectedExamTask ? "Вернуться к заданиям НЭ" : "Вернуться к уровням"}
           </button>
         </div>
       </div>
     )
-}
+  }
 
   return (
     <ScenarioRenderer
@@ -1436,6 +1615,7 @@ if (showResults) {
       currentScenarioIndex={currentScenarioIndex}
       currentScenariosLength={currentScenarios.length}
       selectedLevel={selectedLevel}
+      selectedExamTask={selectedExamTask}
       selectedAnswer={selectedAnswer}
       selectedAnswers={selectedAnswers}
       showExplanation={showExplanation}

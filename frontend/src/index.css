@@ -1228,3 +1228,334 @@ button:hover {
     grid-template-columns: 1fr;
   }
 }
+
+.modules-subtitle {
+  color: #5d6b89;
+  margin-bottom: 22px;
+}
+
+.exam-section-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.exam-section-tabs button {
+  background: #f3f6fb;
+  color: #17213a;
+  border: 1px solid #dce4f0;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-weight: 700;
+}
+
+.exam-section-tabs button.active-tab {
+  background: #17213a;
+  color: #ffffff;
+}
+
+.exam-task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.exam-task-card {
+  background: #ffffff;
+  border: 1px solid #e3eaf5;
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 12px 30px rgba(31, 42, 68, 0.06);
+}
+
+.exam-task-card span {
+  display: block;
+  color: #2f7f7b;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.exam-task-card h3 {
+  color: #17213a;
+  font-size: 21px;
+  margin-bottom: 10px;
+}
+
+.exam-task-card p {
+  color: #5d6b89;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.exam-task-card button {
+  background: #17213a;
+  color: #ffffff;
+  padding: 11px 15px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .exam-task-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.exam-dashboard {
+  margin-bottom: 34px;
+}
+
+.exam-overall-card {
+  margin-top: 18px;
+  background: #f8fbff;
+  border: 1px solid #e3eaf5;
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+
+.exam-overall-card h3 {
+  color: #17213a;
+  margin-bottom: 6px;
+}
+
+.exam-overall-card p {
+  color: #5d6b89;
+  line-height: 1.5;
+}
+
+.exam-overall-card strong {
+  font-size: 34px;
+  color: #17213a;
+}
+
+.exam-progress-bar {
+  margin-top: 14px;
+  margin-bottom: 20px;
+}
+
+.dashboard-bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.dashboard-panel {
+  background: #ffffff;
+  border: 1px solid #e3eaf5;
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.dashboard-panel h3 {
+  color: #17213a;
+  margin-bottom: 14px;
+}
+
+.dashboard-panel button {
+  margin-top: 14px;
+  background: #17213a;
+  color: #ffffff;
+  padding: 11px 15px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.muted-text {
+  color: #5d6b89;
+  line-height: 1.5;
+}
+
+.recommended-task-title {
+  color: #17213a;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exam-overall-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.results-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.exam-results-section {
+  margin-top: 24px;
+}
+
+.exam-results-section h3,
+.attempt-history-section h3 {
+  color: #17213a;
+  font-size: 24px;
+  margin-bottom: 18px;
+}
+
+.exam-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.exam-result-card {
+  background: #f8fbff;
+  border: 1px solid #e3eaf5;
+  border-radius: 22px;
+  padding: 20px;
+}
+
+.exam-result-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.exam-result-card-top span {
+  display: block;
+  color: #2f7f7b;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 7px;
+}
+
+.exam-result-card-top h4 {
+  color: #17213a;
+  font-size: 19px;
+}
+
+.exam-result-card p {
+  color: #5d6b89;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.exam-status {
+  display: inline-flex !important;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  white-space: nowrap;
+  margin-bottom: 0 !important;
+}
+
+.exam-status-ready {
+  background: #eefaf4;
+  color: #168348 !important;
+}
+
+.exam-status-in_progress {
+  background: #fff7e6;
+  color: #9a6700 !important;
+}
+
+.exam-status-not_started {
+  background: #eef2f7;
+  color: #5d6b89 !important;
+}
+
+.exam-result-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.exam-result-stats div {
+  background: #ffffff;
+  border: 1px solid #e3eaf5;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.exam-result-stats span {
+  display: block;
+  color: #5d6b89;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.exam-result-stats strong {
+  color: #17213a;
+  font-size: 22px;
+}
+
+.exam-result-card button {
+  margin-top: 14px;
+  background: #17213a;
+  color: #ffffff;
+  padding: 11px 15px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.attempt-history-section {
+  margin-top: 34px;
+}
+
+.attempt-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.attempt-history-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e3eaf5;
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.attempt-history-item span {
+  display: block;
+  color: #5d6b89;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.attempt-history-item strong {
+  color: #17213a;
+}
+
+@media (max-width: 1000px) {
+  .results-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .exam-results-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .results-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .attempt-history-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

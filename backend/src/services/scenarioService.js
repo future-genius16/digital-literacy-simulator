@@ -1,6 +1,11 @@
 const pool = require("../config/db")
 
-const getAllScenarios = async ({ module, level } = {}) => {
+const getAllScenarios = async ({
+  module,
+  level,
+  exam_section,
+  exam_task_number,
+} = {}) => {
   const conditions = []
   const values = []
 
@@ -14,6 +19,16 @@ const getAllScenarios = async ({ module, level } = {}) => {
   if (level) {
     values.push(Number(level))
     conditions.push(`level = $${values.length}`)
+  }
+
+  if (exam_section) {
+    values.push(exam_section)
+    conditions.push(`exam_section = $${values.length}`)
+  }
+
+  if (exam_task_number) {
+    values.push(Number(exam_task_number))
+    conditions.push(`exam_task_number = $${values.length}`)
   }
 
   const whereClause =

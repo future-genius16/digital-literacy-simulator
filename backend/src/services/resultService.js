@@ -7,12 +7,33 @@ const saveResult = async ({
   level = 1,
   score,
   totalQuestions,
+  exam_section = null,
+  exam_task_number = null,
+  exam_task_title = null,
 }) => {
   const result = await pool.query(
-    `INSERT INTO results (user_id, module, level, score, total_questions)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO results (
+       user_id,
+       module,
+       level,
+       score,
+       total_questions,
+       exam_section,
+       exam_task_number,
+       exam_task_title
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
-    [userId, module, level, score, totalQuestions]
+    [
+      userId,
+      module,
+      level,
+      score,
+      totalQuestions,
+      exam_section,
+      exam_task_number ? Number(exam_task_number) : null,
+      exam_task_title,
+    ]
   )
 
   await progressService.updateProgressAfterResult({

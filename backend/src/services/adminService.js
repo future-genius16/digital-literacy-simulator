@@ -188,7 +188,7 @@ const allowedTaskTypes = [
   "permission_check",
 ]
 
-const allowedModules = ["info", "phishing", "data"]
+const allowedModules = ["info", "phishing", "data", "exam"]
 
 const getAllScenariosAdmin = async () => {
   const result = await pool.query(
@@ -216,6 +216,11 @@ const createScenario = async ({
   level = 1,
   difficulty = "basic",
   task_type = "single_choice",
+  exam_section = null,
+  exam_task_number = null,
+  exam_task_title = null,
+  exam_topic = null,
+  course_materials = null,
   digcomp_area = null,
   digcomp_competence = null,
   learning_outcome = null,
@@ -285,6 +290,11 @@ const createScenario = async ({
      level,
      difficulty,
      task_type,
+     exam_section,
+     exam_task_number,
+     exam_task_title,
+     exam_topic,
+     course_materials,
      digcomp_area,
      digcomp_competence,
      learning_outcome,
@@ -294,7 +304,8 @@ const createScenario = async ({
    VALUES (
      $1, $2, $3, $4, $5, $6, $7, $8,
      $9, $10, $11, $12, $13, $14,
-     $15, $16, $17, $18, true
+     $15, $16, $17, $18, $19, $20, 
+     $21, $22, $23, true
    )
    RETURNING *`,
     [
@@ -312,6 +323,11 @@ const createScenario = async ({
       normalizedLevel,
       difficulty,
       task_type,
+      exam_section,
+      exam_task_number ? Number(exam_task_number) : null,
+      exam_task_title,
+      exam_topic,
+      course_materials,
       digcomp_area,
       digcomp_competence,
       learning_outcome,
@@ -339,6 +355,11 @@ const updateScenario = async ({
   level = 1,
   difficulty = "basic",
   task_type = "single_choice",
+  exam_section = null,
+  exam_task_number = null,
+  exam_task_title = null,
+  exam_topic = null,
+  course_materials = null,
   digcomp_area = null,
   digcomp_competence = null,
   learning_outcome = null,
@@ -395,12 +416,17 @@ const updateScenario = async ({
          level = $12,
          difficulty = $13,
          task_type = $14,
-         digcomp_area = $15,
-         digcomp_competence = $16,
-         learning_outcome = $17,
-        option_feedback = $18,
-        is_active = $19
-     WHERE id = $20
+         exam_section = $15,
+         exam_task_number = $16,
+         exam_task_title = $17,
+         exam_topic = $18,
+         course_materials = $19,
+         digcomp_area = $20,
+         digcomp_competence = $21,
+         learning_outcome = $22,
+         option_feedback = $23,
+         is_active = $24
+     WHERE id = $25
      RETURNING *`,
     [
         module,
@@ -417,6 +443,11 @@ const updateScenario = async ({
         Number(level),
         difficulty,
         task_type,
+        exam_section,
+        exam_task_number ? Number(exam_task_number) : null,
+        exam_task_title,
+        exam_topic,
+        course_materials,
         digcomp_area,
         digcomp_competence,
         learning_outcome,

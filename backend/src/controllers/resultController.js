@@ -1,7 +1,16 @@
 const resultService = require("../services/resultService")
 
 const saveResult = async (req, res) => {
-  const { module, level = 1, score, total_questions } = req.body
+  const {
+    module,
+    level = 1,
+    score,
+    total_questions,
+    exam_section,
+    exam_task_number,
+    exam_task_title,
+  } = req.body
+
   const userId = req.user.id
 
   try {
@@ -11,6 +20,9 @@ const saveResult = async (req, res) => {
       level,
       score,
       totalQuestions: total_questions,
+      exam_section,
+      exam_task_number,
+      exam_task_title,
     })
 
     res.status(201).json(result)

@@ -5,6 +5,8 @@ const getScenarios = async (req, res) => {
     const scenarios = await scenarioService.getAllScenarios({
       module: req.query.module,
       level: req.query.level,
+      exam_section: req.query.exam_section,
+      exam_task_number: req.query.exam_task_number,
     })
 
     res.json(scenarios)
