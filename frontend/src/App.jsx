@@ -2,96 +2,11 @@ import { useEffect } from "react"
 import { useState } from "react"
 import UserDashboard from "./components/UserDashboard"
 import ResultsPage from "./components/ResultsPage"
-import ModuleCard from "./components/ModuleCard"
-import LevelCard from "./components/LevelCard"
 import AuthBox from "./components/AuthBox"
 import ScenarioRenderer from "./components/ScenarioRenderer"
 import { examTasks } from "./examTasks"
 import ExamTaskInfo from "./components/ExamTaskInfo"
-
-const modules = {
-  phishing: [
-    {
-      id: 1,
-      title: "Phishing Email",
-      text: "You receive an email from your bank asking you to urgently confirm your account details...",
-      options: [
-        { text: "Click the link and enter details", isCorrect: false },
-        { text: "Contact the bank directly", isCorrect: true },
-      ],
-      explanation:
-        "Suspicious links and unusual sender addresses are signs of phishing.",
-    },
-    {
-      id: 2,
-      title: "Fake Prize",
-      text: "You receive a message about winning a prize that requires personal data...",
-      options: [
-        { text: "Send your data", isCorrect: false },
-        { text: "Ignore and report", isCorrect: true },
-      ],
-      explanation:
-        "Requests for personal data combined with urgency indicate fraud.",
-    },
-  ],
-
-  info: [
-    {
-      id: 1,
-      title: "Suspicious News",
-      text: "You see a shocking news article shared on social media...",
-      options: [
-        { text: "Share immediately", isCorrect: false },
-        { text: "Check source credibility", isCorrect: true },
-      ],
-      explanation:
-        "Always verify sources before sharing information.",
-    },
-    {
-      id: 2,
-      title: "Unknown Website",
-      text: "You find an article on an unfamiliar website with no author or references. The information seems surprising.",
-      options: [
-        { text: "Trust the information and use it", isCorrect: false },
-        { text: "Check other reliable sources to verify", isCorrect: true },
-      ],
-      explanation:
-        "Reliable information should be verified across multiple trusted sources.",
-    }
-  ],
-
-  data: [
-    {
-      id: 1,
-      title: "App Permissions",
-      text: "An app asks for access to your contacts and location...",
-      options: [
-        { text: "Allow everything", isCorrect: false },
-        { text: "Limit permissions", isCorrect: true },
-      ],
-      explanation:
-        "Only grant permissions that are necessary.",
-    },
-    {
-      id: 2,
-      title: "Public Wi-Fi",
-      text: "You are using public Wi-Fi and need to log into your bank account.",
-      options: [
-        { text: "Log in as usual", isCorrect: false },
-        { text: "Avoid logging in or use a secure connection", isCorrect: true },
-      ],
-      explanation:
-        "Public Wi-Fi networks are often insecure and can expose sensitive data.",
-    }
-  ],
-}
-
-const moduleTitles = {
-  info: "Information Evaluation",
-  phishing: "Phishing & Threats",
-  data: "Data Protection",
-}
-
+import TopBar from "./components/TopBar"
 
 function App() {
   const [started, setStarted] = useState(false)
@@ -112,6 +27,7 @@ function App() {
   const [password, setPassword] = useState("")
   const [authMessage, setAuthMessage] = useState("")
   const [authMessageType, setAuthMessageType] = useState("")
+  const [showAuthModal, setShowAuthModal] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
   const [adminUsers, setAdminUsers] = useState([])
   const [adminStats, setAdminStats] = useState(null)
@@ -128,7 +44,6 @@ function App() {
   const [courseFilter, setCourseFilter] = useState("all")
   const [progress, setProgress] = useState([])
   const [selectedLevel, setSelectedLevel] = useState(1)
-  const [showLevels, setShowLevels] = useState(false)
   const [adminScenarios, setAdminScenarios] = useState([])
   const [adminActiveTab, setAdminActiveTab] = useState("overview")
   const [scenarioForm, setScenarioForm] = useState({
@@ -168,7 +83,38 @@ function App() {
   const [showExamTasks, setShowExamTasks] = useState(false)
   const [selectedExamInfoTask, setSelectedExamInfoTask] = useState(null)
   const [examTasksFromServer, setExamTasksFromServer] = useState([])
+  const [examTaskInfoForm, setExamTaskInfoForm] = useState(null)
   const [examSectionFilter, setExamSectionFilter] = useState("theoretical")
+  const [toast, setToast] = useState({
+    message: "",
+    type: "",
+  })
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type })
+  }
+
+  const getReadableErrorMessage = (message) => {
+    const errorMessages = {
+      "Invalid password": "Неверный пароль.",
+      "User not found": "Пользователь не найден.",
+      "User already exists": "Пользователь уже существует.",
+      "Email is required": "Введите email.",
+      "Password is required": "Введите пароль.",
+      "Invalid email or password": "Неверный email или пароль.",
+      "Access denied": "Недостаточно прав для выполнения действия.",
+      "Token missing": "Необходимо войти в систему.",
+      "Invalid token": "Сессия истекла. Войдите заново.",
+      "Failed to load users": "Не удалось загрузить пользователей.",
+      "Failed to load statistics": "Не удалось загрузить статистику.",
+      "Failed to load scenarios": "Не удалось загрузить задания.",
+      "Failed to load progress": "Не удалось загрузить прогресс.",
+      "Failed to load results": "Не удалось загрузить результаты.",
+      "Server connection error": "Ошибка соединения с сервером.",
+    }
+
+    return errorMessages[message] || message || "Произошла ошибка."
+  }
 
   const displayExamTasks = examTasks.map((localTask) => {
     const serverTask = examTasksFromServer.find(
@@ -247,7 +193,7 @@ const handleAuth = async () => {
     const data = await response.json()
 
     if (!response.ok) {
-      setAuthMessage(data.message || "Authentication failed")
+      setAuthMessage(getReadableErrorMessage(data.message || "Не удалось выполнить вход."))
       setAuthMessageType("error")
       return
     }
@@ -255,10 +201,10 @@ const handleAuth = async () => {
     if (authMode === "login") {
       setCurrentUser(data.user)
       setToken(data.token)
-      setAuthMessage(`Logged in as ${data.user.email}`)
+      setAuthMessage(`Вы вошли как ${data.user.email}`)
       setAuthMessageType("success")
     } else {
-      setAuthMessage("Account activated successfully. Please log in.")
+      setAuthMessage("Аккаунт успешно активирован. Теперь войдите в систему.")
       setAuthMessageType("success")
       setAuthMode("login")
     }
@@ -267,7 +213,7 @@ const handleAuth = async () => {
     setPassword("")
   } catch (error) {
     console.error(error)
-    setAuthMessage("Server connection error")
+    setAuthMessage("Ошибка соединения с сервером.")
     setAuthMessageType("error")
   }
 }
@@ -284,7 +230,8 @@ const handleLogout = () => {
   setAdminStats(null)
   setEmail("")
   setPassword("")
-  setAuthMessage("Logged out successfully.")
+  setShowAuthModal(false)
+  setAuthMessage("Вы вышли из системы.")
   setAuthMessageType("success")
 }
 
@@ -303,7 +250,7 @@ const loadAdminData = async () => {
     const usersData = await usersResponse.json()
 
     if (!usersResponse.ok) {
-      setAdminMessage(usersData.message || "Failed to load users")
+      setAdminMessage(getReadableErrorMessage(usersData.message || "Failed to load users"))
       setAdminMessageType("error")
       return
     }
@@ -317,7 +264,7 @@ const loadAdminData = async () => {
     const statsData = await statsResponse.json()
 
     if (!statsResponse.ok) {
-      setAdminMessage(statsData.message || "Failed to load statistics")
+      setAdminMessage(getReadableErrorMessage(statsData.message || "Failed to load statistics"))
       setAdminMessageType("error")
       return
     }
@@ -331,7 +278,7 @@ const loadAdminData = async () => {
     const scenariosData = await scenariosResponse.json()
 
     if (!scenariosResponse.ok) {
-      setAdminMessage(scenariosData.message || "Failed to load scenarios")
+      setAdminMessage(getReadableErrorMessage(scenariosData.message || "Failed to load scenarios"))
       setAdminMessageType("error")
       return
     }
@@ -341,7 +288,7 @@ const loadAdminData = async () => {
     setAdminScenarios(scenariosData)
   } catch (error) {
     console.error(error)
-    setAdminMessage("Server connection error")
+    setAdminMessage(getReadableErrorMessage("Server connection error"))
     setAdminMessageType("error")
   }
 }
@@ -361,7 +308,7 @@ const loadProgress = async () => {
     const data = await response.json()
 
     if (!response.ok) {
-      console.error(data.message || "Failed to load progress")
+      console.error(getReadableErrorMessage(data.message || "Failed to load progress"))
       return
     }
 
@@ -402,7 +349,7 @@ const loadResults = async () => {
     const data = await response.json()
 
     if (!response.ok) {
-      console.error(data.message || "Failed to load results")
+      console.error(getReadableErrorMessage(data.message || "Failed to load results"))
       return
     }
 
@@ -453,6 +400,37 @@ const loadResults = async () => {
     }
   }, [token, currentUser])
 
+  useEffect(() => {
+    if (!adminMessage) {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      setAdminMessage("")
+      setAdminMessageType("")
+    }, 4000)
+
+    return () => clearTimeout(timer)
+  }, [adminMessage])
+
+  useEffect(() => {
+    if (currentUser) {
+      setShowAuthModal(false)
+    }
+  }, [currentUser])
+
+  useEffect(() => {
+  if (!toast.message) {
+    return
+  }
+
+  const timer = setTimeout(() => {
+      setToast({ message: "", type: "" })
+    }, 4000)
+
+    return () => clearTimeout(timer)
+  }, [toast])
+
 const handleCreateUser = async () => {
   if (!newUserEmail) {
     setAdminMessage("Введите email пользователя.")
@@ -478,7 +456,7 @@ const handleCreateUser = async () => {
     const data = await response.json()
 
     if (!response.ok) {
-      setAdminMessage(data.message || "Failed to create user")
+      setAdminMessage(data.message || "Не удалось добавить пользователя.")
       setAdminMessageType("error")
       return
     }
@@ -514,17 +492,196 @@ const handleUpdateUserStatus = async (userId, status) => {
     const data = await response.json()
 
     if (!response.ok) {
-      setAdminMessage(data.message || "Failed to update status")
+      setAdminMessage(data.message || "Не удалось изменить статус пользователя.")
       setAdminMessageType("error")
       return
     }
 
-    setAdminMessage(`Status updated for ${data.email}`)
+    setAdminMessage(`Статус пользователя ${data.email} обновлён.`)
     setAdminMessageType("success")
     loadAdminData()
   } catch (error) {
     console.error(error)
-    setAdminMessage("Server connection error")
+    setAdminMessage("Ошибка соединения с сервером.")
+    setAdminMessageType("error")
+  }
+}
+
+const openExamTaskInfoEditor = (task) => {
+  setExamTaskInfoForm({
+    task_number: task.number,
+    section: task.section,
+    title: task.title,
+    description: task.description || "",
+    knowledgeText: task.knowledge?.join("\n") || "",
+    materials: task.materials?.length
+      ? task.materials
+      : [
+          {
+            category: "",
+            links: [{ title: "", url: "" }],
+          },
+        ],
+  })
+}
+
+const updateExamTaskInfoForm = (field, value) => {
+  setExamTaskInfoForm((prev) => ({
+    ...prev,
+    [field]: value,
+  }))
+}
+
+const updateMaterialCategory = (groupIndex, value) => {
+  setExamTaskInfoForm((prev) => ({
+    ...prev,
+    materials: prev.materials.map((group, index) =>
+      index === groupIndex ? { ...group, category: value } : group
+    ),
+  }))
+}
+
+const updateMaterialLink = (groupIndex, linkIndex, field, value) => {
+  setExamTaskInfoForm((prev) => ({
+    ...prev,
+    materials: prev.materials.map((group, currentGroupIndex) => {
+      if (currentGroupIndex !== groupIndex) {
+        return group
+      }
+
+      return {
+        ...group,
+        links: group.links.map((link, currentLinkIndex) =>
+          currentLinkIndex === linkIndex ? { ...link, [field]: value } : link
+        ),
+      }
+    }),
+  }))
+}
+
+const addMaterialGroup = () => {
+  setExamTaskInfoForm((prev) => ({
+    ...prev,
+    materials: [
+      ...prev.materials,
+      {
+        category: "",
+        links: [{ title: "", url: "" }],
+      },
+    ],
+  }))
+}
+
+const removeMaterialGroup = (groupIndex) => {
+  setExamTaskInfoForm((prev) => ({
+    ...prev,
+    materials: prev.materials.filter((_, index) => index !== groupIndex),
+  }))
+}
+
+const addMaterialLink = (groupIndex) => {
+  setExamTaskInfoForm((prev) => ({
+    ...prev,
+    materials: prev.materials.map((group, index) =>
+      index === groupIndex
+        ? {
+            ...group,
+            links: [...group.links, { title: "", url: "" }],
+          }
+        : group
+    ),
+  }))
+}
+
+const removeMaterialLink = (groupIndex, linkIndex) => {
+  setExamTaskInfoForm((prev) => ({
+    ...prev,
+    materials: prev.materials.map((group, index) =>
+      index === groupIndex
+        ? {
+            ...group,
+            links: group.links.filter((_, currentLinkIndex) => currentLinkIndex !== linkIndex),
+          }
+        : group
+    ),
+  }))
+}
+
+const handleUpdateExamTaskInfo = async () => {
+  if (!examTaskInfoForm) {
+    return
+  }
+
+  if (!examTaskInfoForm.title.trim() || !examTaskInfoForm.section) {
+    setAdminMessage("Заполните название задания и часть экзамена.")
+    setAdminMessageType("error")
+    return
+  }
+
+  const payload = {
+    section: examTaskInfoForm.section,
+    title: examTaskInfoForm.title,
+    description: examTaskInfoForm.description,
+    knowledge: examTaskInfoForm.knowledgeText
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean),
+    materials: examTaskInfoForm.materials
+      .map((group) => ({
+        category: group.category.trim(),
+        links: group.links
+          .map((link) => ({
+            title: link.title.trim(),
+            url: link.url.trim(),
+          }))
+          .filter((link) => link.title && link.url),
+      }))
+      .filter((group) => group.category && group.links.length > 0),
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:3001/exam-tasks/${examTaskInfoForm.task_number}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setAdminMessage(data.message || "Не удалось обновить информацию о задании.")
+      setAdminMessageType("error")
+      return
+    }
+
+    setAdminMessage(`Информация о задании ${data.task_number} обновлена.`)
+    setAdminMessageType("success")
+    await loadExamTasks()
+
+    setExamTaskInfoForm({
+      task_number: data.task_number,
+      section: data.section,
+      title: data.title,
+      description: data.description || "",
+      knowledgeText: data.knowledge?.join("\n") || "",
+      materials: data.materials?.length
+        ? data.materials
+        : [
+            {
+              category: "",
+              links: [{ title: "", url: "" }],
+            },
+          ],
+    })
+  } catch (error) {
+    console.error(error)
+    setAdminMessage("Ошибка соединения с сервером.")
     setAdminMessageType("error")
   }
 }
@@ -680,61 +837,15 @@ const handleCreateScenario = async () => {
       .catch((err) => console.error(err))
   } catch (error) {
     console.error(error)
-    setAdminMessage("Server connection error")
+    setAdminMessage("Ошибка соединения с сервером.")
     setAdminMessageType("error")
   }
 }
 
-const startModule = (moduleKey, level = 1) => {
-  if (!currentUser) {
-    setAuthMessage("Please log in first.")
-    setAuthMessageType("error")
-    return
-  }
-
-  const levelProgress = progress.find(
-    (item) =>
-      item.module === moduleKey &&
-      Number(item.level) === Number(level)
-  )
-
-  if (levelProgress && !levelProgress.is_unlocked) {
-    setAuthMessage("This level is locked. Complete the previous level first.")
-    setAuthMessageType("error")
-    return
-  }
-
-  setSelectedModule(moduleKey)
-  setSelectedLevel(level)
-  setCurrentScenarioIndex(0)
-  setSelectedAnswer(null)
-  setSelectedAnswers([])
-  setShowExplanation(false)
-  setFinished(false)
-  setScore(0)
-  setShowLevels(false)
-  setStarted(true)
-}
-
-const openModuleLevels = (moduleName) => {
-  if (!currentUser) {
-    setAuthMessage("Please log in first.")
-    setAuthMessageType("error")
-    return
-  }
-
-  setSelectedModule(moduleName)
-  setSelectedLevel(1)
-  setShowLevels(true)
-  setStarted(false)
-  setShowResults(false)
-  setShowAdmin(false)
-}
-
 const openExamTask = async (taskNumber) => {
   if (!currentUser) {
-    setAuthMessage("Сначала войдите в систему.")
-    setAuthMessageType("error")
+    showToast("Сначала войдите в систему, чтобы начать тренировку.", "error")
+    setShowAuthModal(true)
     return
   }
 
@@ -852,7 +963,7 @@ const currentScenarios = selectedModule
     return (
       <div className="app">
         <div className="scenario">
-          <p>No scenario available.</p>
+          <p>Для выбранного задания пока нет доступного сценария.</p>
         </div>
       </div>
     )
@@ -921,10 +1032,13 @@ const checkMultiSelectAnswer = () => {
     option_e: "Вариант E",
   }
 
-  const shouldShowOptionFeedback =
-    scenarioForm.task_type === "multi_select" ||
-    scenarioForm.task_type === "permission_check" ||
-    scenarioForm.task_type === "risk_analysis"
+  const taskTypeLabels = {
+    single_choice: "Один правильный ответ",
+    multi_select: "Несколько правильных ответов",
+    sequence: "Последовательность",
+  }
+
+  const shouldShowOptionFeedback = scenarioForm.task_type === "multi_select"
 
   const getExamTaskKnowledgeText = (task) =>
     task?.knowledge?.join("; ") || ""
@@ -936,6 +1050,39 @@ const checkMultiSelectAnswer = () => {
           `${group.category}: ${group.links.map((link) => link.title).join("; ")}`
       )
       .join(". ") || ""
+
+  const examTaskScenarioStats = displayExamTasks.map((task) => {
+    const taskScenarios = adminScenarios.filter(
+      (scenario) => Number(scenario.exam_task_number) === Number(task.number)
+    )
+
+    const activeScenarios = taskScenarios.filter(
+      (scenario) => scenario.is_active
+    )
+
+    const singleChoiceCount = taskScenarios.filter(
+      (scenario) => scenario.task_type === "single_choice"
+    ).length
+
+    const multiSelectCount = taskScenarios.filter(
+      (scenario) => scenario.task_type === "multi_select"
+    ).length
+
+    const sequenceCount = taskScenarios.filter(
+      (scenario) => scenario.task_type === "sequence"
+    ).length
+
+    return {
+      number: task.number,
+      title: task.title,
+      section: task.section,
+      total: taskScenarios.length,
+      active: activeScenarios.length,
+      singleChoiceCount,
+      multiSelectCount,
+      sequenceCount,
+    }
+  })
 
   const filteredAdminUsers = adminUsers.filter((user) => {
     const matchesSearch =
@@ -983,6 +1130,15 @@ const uniqueCourses = [
     return (
       <div className="app">
         <div className="admin-page">
+          <button
+            className="page-back-button"
+            onClick={() => {
+              setShowAdmin(false)
+              setShowResults(false)
+            }}
+          >
+            Назад
+          </button>
           <div className="admin-header">
             <div>
               <p className="scenario-label">Администрирование</p>
@@ -991,14 +1147,6 @@ const uniqueCourses = [
                 Управление студентами, заданиями НЭ и статистикой прохождения тренажёра.
               </p>
             </div>
-
-            <button
-              onClick={() => {
-                setShowAdmin(false)
-              }}
-            >
-              Вернуться на главную
-            </button>
           </div>
 
           <div className="admin-tabs">
@@ -1024,6 +1172,13 @@ const uniqueCourses = [
             </button>
 
             <button
+              className={adminActiveTab === "taskInfo" ? "active-tab" : ""}
+              onClick={() => setAdminActiveTab("taskInfo")}
+            >
+              Информация о заданиях
+            </button>
+
+            <button
               className={adminActiveTab === "create" ? "active-tab" : ""}
               onClick={() => setAdminActiveTab("create")}
             >
@@ -1032,13 +1187,23 @@ const uniqueCourses = [
           </div>
 
           {adminMessage && (
-            <p
-              className={`auth-message ${
-                adminMessageType === "error" ? "auth-error" : "auth-success"
+            <div
+              className={`admin-toast ${
+                adminMessageType === "error" ? "admin-toast-error" : "admin-toast-success"
               }`}
             >
-              {adminMessage}
-            </p>
+              <span>{adminMessage}</span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAdminMessage("")
+                  setAdminMessageType("")
+                }}
+              >
+                ×
+              </button>
+            </div>
           )}
 
           {adminActiveTab === "overview" && (
@@ -1308,8 +1473,6 @@ const uniqueCourses = [
                     >
                       <option value="single_choice">Один правильный ответ</option>
                       <option value="multi_select">Несколько правильных ответов</option>
-                      <option value="risk_analysis">Оценка риска</option>
-                      <option value="permission_check">Проверка разрешений</option>
                     </select>
                   </label>
 
@@ -1432,7 +1595,7 @@ const uniqueCourses = [
                               ? "Практика"
                               : "—"}
                           </td>
-                          <td>{scenario.task_type}</td>
+                          <td>{taskTypeLabels[scenario.task_type] || scenario.task_type}</td>
                           <td>{scenario.title}</td>
                           <td>{scenario.is_active ? "Да" : "Нет"}</td>
                         </tr>
@@ -1443,28 +1606,218 @@ const uniqueCourses = [
             </div>
           )}
 
-          {adminActiveTab === "overview" && adminStats && (
+          {adminActiveTab === "taskInfo" && (
             <div className="admin-section">
-              <h3>Статистика по разделам</h3>
+              <h3>Информация о заданиях НЭ</h3>
+
+              <p className="muted-text">
+                Здесь можно изменить описание задания, проверяемые темы и ссылки на материалы Smart LMS.
+              </p>
+
+              <div className="admin-task-info-layout">
+                <div className="admin-task-info-list">
+                  {displayExamTasks.map((task) => (
+                    <button
+                      key={task.number}
+                      className={
+                        examTaskInfoForm?.task_number === task.number
+                          ? "task-info-list-item active-task-info"
+                          : "task-info-list-item"
+                      }
+                      onClick={() => openExamTaskInfoEditor(task)}
+                    >
+                      <span>
+                        Задание {task.number} ·{" "}
+                        {task.section === "theoretical" ? "теория" : "практика"}
+                      </span>
+                      <strong>{task.title}</strong>
+                    </button>
+                  ))}
+                </div>
+
+                {examTaskInfoForm ? (
+                  <div className="task-info-editor">
+                    <label className="admin-field-label">
+                      Часть экзамена
+                      <select
+                        value={examTaskInfoForm.section}
+                        onChange={(event) =>
+                          updateExamTaskInfoForm("section", event.target.value)
+                        }
+                      >
+                        <option value="theoretical">Теоретическая часть</option>
+                        <option value="practical">Практическая часть</option>
+                      </select>
+                    </label>
+
+                    <label className="admin-field-label">
+                      Название задания
+                      <input
+                        type="text"
+                        value={examTaskInfoForm.title}
+                        onChange={(event) =>
+                          updateExamTaskInfoForm("title", event.target.value)
+                        }
+                      />
+                    </label>
+
+                    <label className="admin-field-label">
+                      Краткое описание
+                      <textarea
+                        value={examTaskInfoForm.description}
+                        onChange={(event) =>
+                          updateExamTaskInfoForm("description", event.target.value)
+                        }
+                      />
+                    </label>
+
+                    <label className="admin-field-label">
+                      Проверяемые темы
+                      <textarea
+                        value={examTaskInfoForm.knowledgeText}
+                        onChange={(event) =>
+                          updateExamTaskInfoForm("knowledgeText", event.target.value)
+                        }
+                      />
+                      <span className="field-hint">
+                        Каждую тему лучше писать с новой строки.
+                      </span>
+                    </label>
+
+                    <div className="materials-editor">
+                      <h4>Материалы онлайн-курса</h4>
+
+                      {examTaskInfoForm.materials.map((group, groupIndex) => (
+                        <div key={groupIndex} className="material-editor-group">
+                          <label className="admin-field-label">
+                            Категория
+                            <input
+                              type="text"
+                              value={group.category}
+                              onChange={(event) =>
+                                updateMaterialCategory(groupIndex, event.target.value)
+                              }
+                            />
+                          </label>
+
+                          {group.links.map((link, linkIndex) => (
+                            <div key={linkIndex} className="material-link-row">
+                              <input
+                                type="text"
+                                placeholder="Название материала"
+                                value={link.title}
+                                onChange={(event) =>
+                                  updateMaterialLink(
+                                    groupIndex,
+                                    linkIndex,
+                                    "title",
+                                    event.target.value
+                                  )
+                                }
+                              />
+
+                              <input
+                                type="url"
+                                placeholder="Ссылка"
+                                value={link.url}
+                                onChange={(event) =>
+                                  updateMaterialLink(
+                                    groupIndex,
+                                    linkIndex,
+                                    "url",
+                                    event.target.value
+                                  )
+                                }
+                              />
+
+                              <button
+                                type="button"
+                                className="danger-button"
+                                onClick={() => removeMaterialLink(groupIndex, linkIndex)}
+                              >
+                                Удалить
+                              </button>
+                            </div>
+                          ))}
+
+                          <div className="materials-editor-actions">
+                            <button type="button" onClick={() => addMaterialLink(groupIndex)}>
+                              Добавить ссылку
+                            </button>
+
+                            <button
+                              type="button"
+                              className="danger-button"
+                              onClick={() => removeMaterialGroup(groupIndex)}
+                            >
+                              Удалить категорию
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      <button type="button" onClick={addMaterialGroup}>
+                        Добавить категорию материалов
+                      </button>
+                    </div>
+
+                    <button onClick={handleUpdateExamTaskInfo}>
+                      Сохранить изменения
+                    </button>
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <h3>Выберите задание</h3>
+                    <p>
+                      Выберите номер задания слева, чтобы отредактировать темы и материалы.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {adminActiveTab === "overview" && (
+            <div className="admin-section">
+              <h3>Наполнение заданий НЭ</h3>
+
+              <p className="muted-text">
+                Сводка показывает, сколько тренировочных вопросов создано для каждого
+                номера независимого экзамена.
+              </p>
 
               <div className="admin-table-wrapper">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Раздел</th>
-                      <th>Попытки</th>
-                      <th>Средний балл</th>
-                      <th>Средний процент</th>
+                      <th>Задание НЭ</th>
+                      <th>Часть</th>
+                      <th>Всего вопросов</th>
+                      <th>Активных</th>
+                      <th>Один ответ</th>
+                      <th>Несколько ответов</th>
+                      <th>Последовательность</th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {adminStats.modules.map((module) => (
-                      <tr key={module.module}>
-                        <td>{module.module}</td>
-                        <td>{module.attempts}</td>
-                        <td>{module.average_score}</td>
-                        <td>{module.average_percentage}%</td>
+                    {examTaskScenarioStats.map((task) => (
+                      <tr key={task.number}>
+                        <td>
+                          <strong>
+                            {task.number}. {task.title}
+                          </strong>
+                        </td>
+                        <td>
+                          {task.section === "theoretical"
+                            ? "Теоретическая"
+                            : "Практическая"}
+                        </td>
+                        <td>{task.total}</td>
+                        <td>{task.active}</td>
+                        <td>{task.singleChoiceCount}</td>
+                        <td>{task.multiSelectCount}</td>
+                        <td>{task.sequenceCount}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1501,115 +1854,154 @@ if (showResults) {
     />
   )
 }
-  
-  if (showLevels) {
-    const moduleProgress = progress.filter(
-      (item) => item.module === selectedModule
-    )
-
-    return (
-      <div className="app">
-        <div className="levels-page">
-          <div className="levels-header">
-            <div>
-              <p className="scenario-label">Training levels</p>
-              <h2>{moduleTitles[selectedModule]}</h2>
-              <p>
-                Complete each level with at least 80% to unlock the next one.
-              </p>
-            </div>
-
-            <button
-              onClick={() => {
-                setShowLevels(false)
-                setSelectedModule(null)
-              }}
-            >
-              Back to homepage
-            </button>
-          </div>
-
-          <div className="level-list">
-            {[1, 2, 3].map((level) => {
-              const item = moduleProgress.find(
-                (progressItem) => Number(progressItem.level) === level
-              )
-
-              return (
-                <LevelCard
-                  key={level}
-                  level={level}
-                  progressItem={item}
-                  onStart={() => startModule(selectedModule, level)}
-                />
-              )
-            })}
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   if (!started) {
     return (
       <div className="app">
-        <div className="hero">
-          <span className="hero-badge">Web-based training platform</span>
+        <TopBar
+          currentUser={currentUser}
+          onOpenAuth={() => setShowAuthModal(true)}
+          onLogout={handleLogout}
+          onOpenResults={() => setShowResults(true)}
+          onOpenAdmin={() => {
+            setShowAdmin(true)
+            setShowResults(false)
+          }}
+          onScrollToTasks={() => {
+            document
+              .getElementById("exam-tasks-section")
+              ?.scrollIntoView({ behavior: "smooth" })
+          }}
+        />
 
-          <h1>Digital Literacy Simulator</h1>
-          <p>
-            An interactive training platform for improving digital literacy and
-            online safety skills.
-          </p>
-          <div className="hero-actions">
-            <button onClick={() => openModuleLevels("info")}>
-              Start training
+        {toast.message && (
+          <div
+            className={`app-toast ${
+              toast.type === "error" ? "app-toast-error" : "app-toast-success"
+            }`}
+          >
+            <span>{toast.message}</span>
+
+            <button
+              type="button"
+              onClick={() => setToast({ message: "", type: "" })}
+            >
+              ×
             </button>
-
-            <button className="secondary-button" onClick={() => setShowResults(true)}>
-              View Results
-            </button>
-
-            {currentUser?.role === "admin" && (
-              <button
-                className="secondary-button"
-                onClick={() => {
-                  setShowAdmin(true)
-                  setShowResults(false)
-                }}
-              >
-                Панель администратора
-              </button>
-            )}
           </div>
+        )}
 
-          <AuthBox
-            currentUser={currentUser}
-            authMode={authMode}
-            email={email}
-            password={password}
-            authMessage={authMessage}
-            authMessageType={authMessageType}
-            setEmail={setEmail}
-            setPassword={setPassword}
-            setAuthMode={setAuthMode}
-            setAuthMessage={setAuthMessage}
-            setAuthMessageType={setAuthMessageType}
-            handleAuth={handleAuth}
-            handleLogout={handleLogout}
-          />
+        {showAuthModal && !currentUser && (
+          <div className="modal-overlay" onClick={() => setShowAuthModal(false)}>
+            <div className="auth-modal" onClick={(event) => event.stopPropagation()}>
+              <div className="auth-modal-header">
+                <div>
+                  <p className="scenario-label">Вход в систему</p>
+                  <h2>Войдите в аккаунт</h2>
+                  <p>
+                    Используйте университетский email, чтобы сохранять результаты
+                    подготовки.
+                  </p>
+                </div>
 
-          {currentUser && (
-            <UserDashboard
-              currentUser={currentUser}
-              results={results}
-              examTasks={displayExamTasks}
-              openExamTask={openExamTask}
-            />
-          )}
-        </div>
+                <button
+                  type="button"
+                  className="modal-close-button"
+                  onClick={() => setShowAuthModal(false)}
+                >
+                  ×
+                </button>
+              </div>
 
-        <div className="modules">
+              <AuthBox
+                currentUser={currentUser}
+                authMode={authMode}
+                email={email}
+                password={password}
+                authMessage={authMessage}
+                authMessageType={authMessageType}
+                setEmail={setEmail}
+                setPassword={setPassword}
+                setAuthMode={setAuthMode}
+                setAuthMessage={setAuthMessage}
+                setAuthMessageType={setAuthMessageType}
+                handleAuth={handleAuth}
+                handleLogout={handleLogout}
+              />
+            </div>
+          </div>
+        )}
+
+                <div className={currentUser ? "hero hero-compact" : "hero"}>
+                  <span className="hero-badge">
+                    Подготовка к независимому экзамену ВШЭ
+                  </span>
+
+                  <h1>Тренажёр по цифровой грамотности</h1>
+
+                  <p>
+                    Повторяйте проверяемые темы, переходите к материалам Smart LMS,
+                    проходите тренировочные задания и отслеживайте прогресс подготовки.
+                  </p>
+
+                  <div className="hero-actions">
+                    {!currentUser ? (
+                      <button onClick={() => setShowAuthModal(true)}>
+                        Войти и начать подготовку
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          document
+                            .getElementById("exam-tasks-section")
+                            ?.scrollIntoView({ behavior: "smooth" })
+                        }}
+                      >
+                        Перейти к заданиям НЭ
+                      </button>
+                    )}
+
+                    {currentUser?.role === "student" && (
+                      <button
+                        className="secondary-button"
+                        onClick={() => setShowResults(true)}
+                      >
+                        Мои результаты
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {currentUser?.role === "student" && (
+                  <UserDashboard
+                    currentUser={currentUser}
+                    results={results}
+                    examTasks={displayExamTasks}
+                    openExamTask={openExamTask}
+                  />
+                )}
+
+                {currentUser?.role === "admin" && (
+                  <div className="admin-home-note">
+                    <h2>Панель администратора</h2>
+                    <p>
+                      Вы вошли как администратор. Перейдите в админ-панель, чтобы
+                      управлять студентами, тренировочными заданиями и информацией по
+                      заданиям НЭ.
+                    </p>
+
+                    <button
+                      onClick={() => {
+                        setShowAdmin(true)
+                        setShowResults(false)
+                      }}
+                    >
+                      Открыть админ-панель
+                    </button>
+                  </div>
+                )}
+
+                <div className="modules" id="exam-tasks-section">
           <h2>Подготовка к НЭ по цифровой грамотности</h2>
           <p className="modules-subtitle">
             Выберите раздел экзамена и начните тренировку по конкретному заданию.
@@ -1705,19 +2097,19 @@ if (showResults) {
               setShowExplanation(false)
               setFinished(false)
               setScore(0)
-
-              if (selectedExamTask) {
-                setSelectedExamTask(null)
-                setShowLevels(false)
-              } else {
-                setShowLevels(true)
-              }
+              setSelectedExamTask(null)
 
               loadProgress()
               loadResults()
+
+              setTimeout(() => {
+                document
+                  .getElementById("exam-tasks-section")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }, 100)
             }}
           >
-            {selectedExamTask ? "Вернуться к заданиям НЭ" : "Вернуться к уровням"}
+            Вернуться к заданиям НЭ
           </button>
         </div>
       </div>

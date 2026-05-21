@@ -13,50 +13,79 @@ function AuthBox({
   handleAuth,
   handleLogout,
 }) {
+  if (currentUser) {
+    return (
+      <div className="auth-box">
+        <div className="auth-current-user">
+          <span>
+            {currentUser.role === "admin" ? "Администратор" : "Студент"}
+          </span>
+          <strong>{currentUser.email}</strong>
+        </div>
+
+        <button type="button" onClick={handleLogout}>
+          Выйти из аккаунта
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="auth-box">
-      {!currentUser && (
-        <>
-          <h3>{authMode === "login" ? "Login" : "Activate account"}</h3>
+      <div className="auth-mode-tabs">
+        <button
+          type="button"
+          className={authMode === "login" ? "active-auth-tab" : ""}
+          onClick={() => {
+            setAuthMode("login")
+            setAuthMessage("")
+            setAuthMessageType("")
+          }}
+        >
+          Вход
+        </button>
 
-          <input
-            type="email"
-            placeholder="University email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
+        <button
+          type="button"
+          className={authMode === "activate" ? "active-auth-tab" : ""}
+          onClick={() => {
+            setAuthMode("activate")
+            setAuthMessage("")
+            setAuthMessageType("")
+          }}
+        >
+          Активация
+        </button>
+      </div>
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
+      <div>
+        <h3>{authMode === "login" ? "Вход в систему" : "Активация аккаунта"}</h3>
+        <p className="auth-box-description">
+          {authMode === "login"
+            ? "Введите университетский email и пароль, чтобы продолжить подготовку."
+            : "Если вам выдали доступ, активируйте аккаунт через университетский email."}
+        </p>
+      </div>
 
-          <button onClick={handleAuth}>
-            {authMode === "login" ? "Login" : "Activate account"}
-          </button>
+      <label className="auth-field">
+        Email
+        <input
+          type="email"
+          placeholder="student@edu.hse.ru"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+        />
+      </label>
 
-          <button
-            onClick={() => {
-              setAuthMode(authMode === "login" ? "register" : "login")
-              setAuthMessage("")
-              setAuthMessageType("")
-              setEmail("")
-              setPassword("")
-            }}
-          >
-            Switch to {authMode === "login" ? "Activate account" : "Login"}
-          </button>
-        </>
-      )}
-
-      {currentUser && (
-        <div className="user-panel">
-          <p>Signed in as {currentUser.email}</p>
-          <button onClick={handleLogout}>Logout</button>
-        </div>
-      )}
+      <label className="auth-field">
+        Пароль
+        <input
+          type="password"
+          placeholder="Введите пароль"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
+      </label>
 
       {authMessage && (
         <p
@@ -67,6 +96,10 @@ function AuthBox({
           {authMessage}
         </p>
       )}
+
+      <button type="button" onClick={handleAuth}>
+        {authMode === "login" ? "Войти" : "Активировать аккаунт"}
+      </button>
     </div>
   )
 }

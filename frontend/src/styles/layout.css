@@ -1,0 +1,138 @@
+.app {
+  min-height: 100vh;
+  width: 100%;
+  padding: 24px;
+  background: var(--page-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.topbar,
+.hero,
+.modules,
+.dashboard,
+.results-page,
+.exam-info-page,
+.admin-page,
+.levels-page,
+.scenario {
+  width: 100%;
+  max-width: var(--page-max-width);
+}
+
+.hero,
+.modules,
+.dashboard,
+.results-page,
+.exam-info-page,
+.admin-page,
+.levels-page,
+.scenario {
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--page-padding);
+  padding-right: var(--page-padding);
+}
+
+.hero,
+.dashboard,
+.results-page,
+.exam-info-page,
+.admin-page,
+.levels-page,
+.scenario {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-soft);
+}
+
+.modules {
+  margin-top: 36px;
+  text-align: center;
+}
+
+.modules h2 {
+  font-size: 36px;
+  margin-bottom: 14px;
+  color: var(--hse-blue);
+}
+
+.modules-subtitle {
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.hero {
+  padding-top: 56px;
+  padding-bottom: 56px;
+  text-align: center;
+}
+
+.hero h1 {
+  max-width: 980px;
+  margin: 0 auto 18px;
+  font-size: 54px;
+  line-height: 1.08;
+  color: var(--hse-blue);
+}
+
+.hero p {
+  max-width: 920px;
+  margin: 0 auto 28px;
+  font-size: 20px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.hero-badge {
+  margin-bottom: 18px;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hero-compact {
+  padding-top: 32px;
+  padding-bottom: 32px;
+}
+
+.hero-compact h1 {
+  font-size: 38px;
+}
+
+.hero-compact p {
+  font-size: 17px;
+  margin-bottom: 22px;
+}
+
+.admin-home-note {
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin: 28px auto 0;
+  padding: 28px var(--page-padding);
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-soft);
+  text-align: left;
+}
+
+.admin-home-note h2 {
+  color: var(--hse-blue);
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+.admin-home-note p {
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-bottom: 18px;
+}

@@ -1,0 +1,227 @@
+.dashboard {
+  margin-top: 28px;
+  padding: 34px var(--page-padding);
+  text-align: left;
+}
+
+.dashboard-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 28px;
+}
+
+.dashboard-header h2 {
+  font-size: 34px;
+  line-height: 1.15;
+  margin: 6px 0 10px;
+  color: var(--hse-blue);
+}
+
+.dashboard-header p {
+  color: var(--text-muted);
+  line-height: 1.55;
+  font-size: 17px;
+}
+
+.dashboard-user {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-soft);
+}
+
+.dashboard-user span {
+  display: block;
+  color: var(--hse-blue);
+  font-weight: 900;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+
+.dashboard-user strong {
+  display: block;
+  color: var(--text-main);
+  font-size: 15px;
+  word-break: break-word;
+}
+
+.dashboard-stats,
+.results-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.dashboard-card {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.dashboard-card span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.dashboard-card strong {
+  display: block;
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--hse-blue);
+}
+
+.exam-dashboard {
+  margin-bottom: 34px;
+}
+
+.exam-overall-card {
+  margin-top: 18px;
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "text percent"
+    "bar bar";
+  gap: 18px 24px;
+  align-items: center;
+}
+
+.exam-overall-card > div:first-child {
+  grid-area: text;
+}
+
+.exam-overall-card h3 {
+  color: var(--hse-blue);
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.exam-overall-card p {
+  color: var(--text-muted);
+  line-height: 1.55;
+  font-size: 16px;
+}
+
+.exam-overall-card strong {
+  grid-area: percent;
+  display: block;
+  font-size: 42px;
+  line-height: 1;
+  color: var(--hse-blue);
+  text-align: right;
+}
+
+.progress-bar,
+.exam-progress-bar,
+.result-progress-bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--border-color);
+  overflow: hidden;
+}
+
+.exam-overall-card .progress-bar,
+.exam-overall-card .exam-progress-bar {
+  grid-area: bar;
+  margin: 0;
+}
+
+.progress-bar div,
+.exam-progress-bar div,
+.result-progress-bar div {
+  height: 100%;
+  background: var(--hse-orange);
+  border-radius: 999px;
+}
+
+.dashboard-bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.dashboard-panel {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-soft);
+}
+
+.dashboard-panel h3 {
+  color: var(--hse-blue);
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+
+.dashboard-panel p {
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.dashboard-panel button {
+  margin-top: 16px;
+}
+
+.recommended-task-title {
+  color: var(--text-main);
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.recent-results {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.recent-results h3 {
+  margin-bottom: 16px;
+  color: var(--hse-blue);
+  font-size: 22px;
+}
+
+.recent-results-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.recent-result-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.recent-result-card span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.recent-result-card strong {
+  display: block;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.recent-result-card p {
+  color: var(--text-muted);
+  font-size: 14px;
+}

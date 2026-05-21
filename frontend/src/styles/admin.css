@@ -1,0 +1,346 @@
+.admin-page {
+  padding: 34px var(--page-padding);
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.admin-header h2 {
+  font-size: 32px;
+  margin-bottom: 10px;
+  color: var(--hse-blue);
+}
+
+.admin-header p {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.admin-header button {
+  white-space: nowrap;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.admin-tabs button {
+  background: #ffffff;
+  color: var(--hse-blue);
+  border: 1px solid var(--border-color);
+}
+
+.admin-tabs button.active-tab {
+  background: var(--hse-blue);
+  color: #ffffff;
+  border-color: var(--hse-blue);
+}
+
+.admin-section {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-section h3 {
+  font-size: 22px;
+  margin-bottom: 16px;
+  color: var(--hse-blue);
+}
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.admin-stat-card {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px;
+}
+
+.admin-stat-card span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.admin-stat-card strong {
+  font-size: 26px;
+  color: var(--hse-blue);
+}
+
+.admin-form,
+.admin-form-wide,
+.admin-filters {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-form {
+  grid-template-columns: 1fr 160px 140px;
+}
+
+.admin-form-wide {
+  grid-template-columns: 1.4fr 130px 220px 110px 130px;
+}
+
+.admin-filters {
+  grid-template-columns: 1.4fr 160px 140px 220px 140px;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-filters input,
+.admin-filters select,
+.admin-table select,
+.scenario-admin-form input,
+.scenario-admin-form select,
+.scenario-admin-form textarea,
+.admin-field-label input,
+.admin-field-label select,
+.admin-field-label textarea,
+.material-link-row input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background: var(--surface-bg);
+}
+
+.admin-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 14px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.admin-table th {
+  color: var(--text-muted);
+  font-weight: 900;
+  background: var(--surface-bg);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.status-active {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.status-invited {
+  background: var(--hse-blue-soft);
+  color: var(--hse-blue);
+}
+
+.status-blocked {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.status-academic_leave {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.status-graduated {
+  background: #eef2f7;
+  color: var(--text-muted);
+}
+
+.scenario-admin-form {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.scenario-admin-form textarea {
+  min-height: 92px;
+}
+
+.scenario-form-block {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.scenario-form-block h4 {
+  color: var(--hse-blue);
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+
+.scenario-form-block input[readonly],
+.scenario-form-block textarea[readonly] {
+  background: #eef3f8;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.scenario-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.scenario-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.scenario-option-editor {
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  display: grid;
+  gap: 10px;
+}
+
+.scenario-option-editor label {
+  color: var(--text-muted);
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.correct-option-control {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-main) !important;
+}
+
+.correct-option-control input {
+  width: auto;
+}
+
+.admin-field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--hse-blue);
+  font-weight: 900;
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+
+.field-hint {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.admin-task-info-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+  margin-top: 18px;
+}
+
+.admin-task-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-info-list-item {
+  text-align: left;
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  color: var(--text-main);
+}
+
+.task-info-list-item span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.task-info-list-item strong {
+  display: block;
+  line-height: 1.35;
+}
+
+.active-task-info {
+  border-color: var(--hse-blue);
+  background: var(--hse-blue-soft);
+}
+
+.task-info-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.materials-editor {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px;
+}
+
+.materials-editor h4 {
+  color: var(--hse-blue);
+  margin-bottom: 14px;
+}
+
+.material-editor-group {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.material-link-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr auto;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.materials-editor-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}

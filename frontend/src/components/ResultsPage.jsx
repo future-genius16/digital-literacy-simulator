@@ -73,6 +73,9 @@ function ResultsPage({ currentUser, results, examTasks, onBack, openExamTask }) 
   return (
     <div className="app">
       <div className="results-page">
+        <button className="page-back-button" onClick={onBack}>
+          Назад
+        </button>
         <div className="results-header">
           <div>
             <p className="scenario-label">Аналитика подготовки</p>
@@ -82,8 +85,6 @@ function ResultsPage({ currentUser, results, examTasks, onBack, openExamTask }) 
               экзамена по цифровой грамотности.
             </p>
           </div>
-
-          <button onClick={onBack}>Вернуться на главную</button>
         </div>
 
         {!currentUser && (

@@ -1,0 +1,153 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+  z-index: 9000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.auth-modal {
+  width: min(540px, 100%);
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 26px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+}
+
+.auth-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.auth-modal-header h2 {
+  color: var(--hse-blue);
+  margin-bottom: 6px;
+}
+
+.auth-modal-header p {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.modal-close-button {
+  background: var(--hse-blue-soft);
+  color: var(--hse-blue);
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  font-size: 24px;
+  line-height: 1;
+  padding: 0;
+}
+
+.auth-box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 6px;
+}
+
+.auth-mode-tabs button {
+  background: transparent;
+  color: var(--hse-blue);
+  box-shadow: none;
+  padding: 10px 12px;
+}
+
+.auth-mode-tabs button:hover {
+  background: rgba(0, 45, 110, 0.08);
+}
+
+.auth-mode-tabs .active-auth-tab {
+  background: var(--hse-blue);
+  color: #ffffff;
+}
+
+.auth-box h3 {
+  color: var(--hse-blue);
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.auth-box-description {
+  color: var(--text-muted);
+  line-height: 1.5;
+  font-size: 15px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--hse-blue);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.auth-field input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  background: var(--surface-bg);
+}
+
+.auth-field input:focus {
+  border-color: var(--hse-blue);
+  background: #ffffff;
+}
+
+.auth-message {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.auth-error {
+  background: var(--error-bg);
+  color: var(--error-text);
+  border: 1px solid var(--error-border);
+}
+
+.auth-success {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid var(--success-border);
+}
+
+.auth-current-user {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.auth-current-user span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.auth-current-user strong {
+  display: block;
+  color: var(--text-main);
+  word-break: break-word;
+}

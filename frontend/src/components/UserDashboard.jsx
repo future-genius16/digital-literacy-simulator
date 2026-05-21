@@ -115,18 +115,17 @@ function UserDashboard({ currentUser, results, examTasks, openExamTask }) {
 
       <div className="exam-overall-card">
         <div>
-          <h3>Общий прогресс подготовки</h3>
-          <p>
-            Раздел считается подготовленным, если лучший результат по нему —
-            80% или выше.
-          </p>
+            <h3>Общий прогресс подготовки</h3>
+            <p>
+              Раздел считается подготовленным, если лучший результат по нему — 80% или выше.
+            </p>
         </div>
 
         <strong>{overallProgress}%</strong>
-      </div>
 
-      <div className="result-progress-bar exam-progress-bar">
-        <div style={{ width: `${overallProgress}%` }} />
+        <div className="exam-progress-bar">
+            <div style={{ width: `${overallProgress}%` }} />
+        </div>
       </div>
 
       <div className="dashboard-bottom-grid">

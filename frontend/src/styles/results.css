@@ -1,0 +1,212 @@
+.results-page {
+  padding: 34px var(--page-padding);
+}
+
+.results-header,
+.levels-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.results-header h2,
+.levels-header h2 {
+  font-size: 32px;
+  margin: 6px 0 10px;
+  color: var(--hse-blue);
+}
+
+.results-header p,
+.levels-header p {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.results-header button,
+.levels-header button {
+  white-space: nowrap;
+}
+
+.empty-state {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.empty-state h3 {
+  color: var(--hse-blue);
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.result-card-wide,
+.result-card,
+.exam-result-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background: var(--surface-bg);
+  padding: 20px;
+}
+
+.result-card-top,
+.exam-result-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.result-card-top span,
+.exam-result-card-top span {
+  display: block;
+  color: var(--hse-blue);
+  font-size: 13px;
+  margin-bottom: 6px;
+  font-weight: 900;
+}
+
+.result-card-top h3,
+.exam-result-card-top h4 {
+  color: var(--text-main);
+}
+
+.result-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.result-score-row strong {
+  font-size: 30px;
+  color: var(--hse-blue);
+}
+
+.result-score-row span,
+.result-date {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.result-status,
+.exam-status {
+  display: inline-flex !important;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  white-space: nowrap;
+}
+
+.result-passed,
+.exam-status-ready {
+  background: var(--success-bg);
+  color: var(--success-text) !important;
+}
+
+.result-not-passed,
+.exam-status-in_progress {
+  background: var(--warning-bg);
+  color: var(--warning-text) !important;
+}
+
+.exam-status-not_started {
+  background: #eef2f7;
+  color: var(--text-muted) !important;
+}
+
+.exam-results-section,
+.attempt-history-section {
+  margin-top: 28px;
+}
+
+.exam-results-section h3,
+.attempt-history-section h3 {
+  color: var(--hse-blue);
+  font-size: 24px;
+  margin-bottom: 18px;
+}
+
+.exam-results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.exam-result-card p {
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.exam-result-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.exam-result-stats div {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.exam-result-stats span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.exam-result-stats strong {
+  color: var(--hse-blue);
+  font-size: 22px;
+}
+
+.exam-result-card button {
+  margin-top: 14px;
+}
+
+.attempt-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.attempt-history-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.attempt-history-item span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.attempt-history-item strong {
+  color: var(--text-main);
+}

@@ -2,6 +2,9 @@ function ExamTaskInfo({ task, onBack, onStartTraining }) {
   return (
     <div className="app">
       <div className="exam-info-page">
+          <button className="page-back-button" onClick={onBack}>
+            Назад
+          </button>
         <div className="results-header">
           <div>
             <p className="scenario-label">

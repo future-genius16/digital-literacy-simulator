@@ -1,0 +1,68 @@
+button {
+  background: var(--hse-blue);
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+}
+
+button:hover {
+  background: var(--hse-blue-dark);
+}
+
+.secondary-button {
+  background: #ffffff;
+  color: var(--hse-blue);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+.secondary-button:hover {
+  background: rgba(0, 45, 110, 0.08);
+}
+
+.danger-button {
+  background: var(--error-bg);
+  color: var(--error-text);
+  border: 1px solid var(--error-border);
+}
+
+.danger-button:hover {
+  background: #ffe4e6;
+}
+
+.page-back-button {
+  background: transparent;
+  color: var(--hse-blue);
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-bottom: 22px;
+  font-size: 16px;
+}
+
+.page-back-button:hover {
+  background: transparent;
+  color: var(--hse-blue-dark);
+  transform: translateX(-2px);
+}
+
+.page-back-button::before {
+  content: "←";
+  font-weight: 900;
+}
+
+.page-back-button:hover {
+  background: rgba(0, 45, 110, 0.08);
+  color: var(--hse-blue);
+}
+
+.page-back-button::before {
+  content: "←";
+  font-weight: 900;
+}

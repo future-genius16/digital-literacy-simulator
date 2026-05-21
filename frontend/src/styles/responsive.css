@@ -1,0 +1,188 @@
+@media (max-width: 1100px) {
+  :root {
+    --page-padding: 24px;
+  }
+
+  .module-list,
+  .exam-task-grid,
+  .exam-results-grid,
+  .recent-results-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-stats,
+  .results-summary-grid,
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-task-info-layout,
+  .exam-info-grid,
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-form,
+  .admin-form-wide,
+  .admin-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header,
+  .exam-info-page .results-header {
+    grid-template-columns: 1fr;
+  }
+
+  .exam-overall-card {
+    grid-template-columns: 1fr;
+  }
+
+  .exam-overall-card strong {
+    text-align: left;
+  }
+}
+
+@media (max-width: 780px) {
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .topbar-actions button {
+    width: 100%;
+  }
+
+  .topbar-user {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  :root {
+    --page-padding: 16px;
+  }
+
+  .app {
+    padding: 16px;
+  }
+
+  .hero {
+    padding-top: 32px;
+    padding-bottom: 32px;
+  }
+
+  .hero h1 {
+    font-size: 34px;
+    line-height: 1.1;
+  }
+
+  .hero p {
+    font-size: 16px;
+  }
+
+  .hero-actions,
+  .exam-task-actions,
+  .materials-editor-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-actions button,
+  .exam-task-actions button {
+    width: min(100%, 280px);
+  }
+
+  .module-list,
+  .exam-task-grid,
+  .exam-results-grid,
+  .dashboard-stats,
+  .results-summary-grid,
+  .admin-stats-grid,
+  .scenario-options-grid,
+  .module-progress-grid,
+  .recent-results-list,
+  .results-grid,
+  .exam-result-stats,
+  .scenario-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .module-card,
+  .exam-task-card {
+    text-align: left;
+    align-items: stretch;
+    padding: 22px;
+  }
+
+  .module-card span,
+  .module-card h3,
+  .module-card p,
+  .exam-task-card span,
+  .exam-task-card h3,
+  .exam-task-card p {
+    text-align: left;
+  }
+
+  .module-card h3,
+  .exam-task-card h3 {
+    font-size: 24px;
+    line-height: 1.2;
+    word-break: normal;
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+
+  .dashboard {
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+
+  .dashboard-header h2 {
+    font-size: 28px;
+  }
+
+  .exam-info-page .results-header h2 {
+    font-size: 32px;
+  }
+
+  .admin-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .admin-table {
+    min-width: 760px;
+  }
+
+  .material-link-row {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-modal {
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .admin-toast {
+    left: 16px;
+    right: 16px;
+    top: 16px;
+    max-width: none;
+  }
+
+  .results-header,
+  .levels-header,
+  .admin-header {
+    flex-direction: column;
+  }
+
+  .attempt-history-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
