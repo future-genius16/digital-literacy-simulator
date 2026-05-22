@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: digital_literacy_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: digital_literacy_simulator
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: digital_literacy_backend
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      DB_USER: postgres
+      DB_HOST: postgres
+      DB_NAME: digital_literacy_simulator
+      DB_PASSWORD: postgres123
+      DB_PORT: 5432
+      JWT_SECRET: digital_literacy_secret_key
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: digital_literacy_frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
