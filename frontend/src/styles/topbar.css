@@ -13,16 +13,11 @@
   gap: 12px;
 }
 
-.topbar-logo {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  background: var(--hse-blue);
-  color: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
+.topbar-logo-image {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .topbar-brand strong {

@@ -2,9 +2,10 @@ function ExamTaskInfo({ task, onBack, onStartTraining }) {
   return (
     <div className="app">
       <div className="exam-info-page">
-          <button className="page-back-button" onClick={onBack}>
-            Назад
-          </button>
+        <button className="page-back-button" onClick={onBack}>
+          Назад
+        </button>
+
         <div className="results-header">
           <div>
             <p className="scenario-label">
@@ -12,13 +13,13 @@ function ExamTaskInfo({ task, onBack, onStartTraining }) {
                 ? "Теоретическая часть"
                 : "Практическая часть"}
             </p>
+
             <h2>
               Задание {task.number}. {task.title}
             </h2>
+
             <p>{task.description}</p>
           </div>
-
-          <button onClick={onBack}>Вернуться на главную</button>
         </div>
 
         <div className="exam-info-grid">

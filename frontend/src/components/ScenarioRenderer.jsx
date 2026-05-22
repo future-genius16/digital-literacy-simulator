@@ -12,10 +12,20 @@ function ScenarioRenderer({
   checkMultiSelectAnswer,
   handleAnswerClick,
   handleNextScenario,
+  handleExitTraining,
 }) {
   return (
     <div className="app">
       <div className="scenario">
+        <div className="scenario-top-actions">
+            <button
+             type="button"
+             className="secondary-button scenario-exit-button"
+             onClick={handleExitTraining}
+            >
+             Выйти из тренировки
+            </button>
+      </div>
         <p className="scenario-label">
           {selectedExamTask
             ? `Задание ${selectedExamTask.number}. ${selectedExamTask.title}`
@@ -27,70 +37,111 @@ function ScenarioRenderer({
 
         <p>{currentScenario.text}</p>
 
+        {currentScenario.image_url && (
+          <div className="scenario-image-wrapper">
+            <img
+              src={currentScenario.image_url}
+              alt="Иллюстрация к заданию"
+              className="scenario-image"
+            />
+          </div>
+        )}
+
         <h3>
-          {currentScenario.task_type === "risk_analysis"
-            ? "Как вы оцените уровень риска?"
-            : currentScenario.task_type === "permission_check"
-            ? "Какие разрешения следует предоставить?"
+          {currentScenario.task_type === "sequence"
+            ? "Расположите действия в правильном порядке"
+            : currentScenario.task_type === "multi_select"
+            ? "Выберите все правильные ответы"
             : "Выберите ответ"}
         </h3>
 
         {isMultiAnswerTask(currentScenario.task_type) ? (
           <>
             <div className="multi-select-hint">
-              {currentScenario.task_type === "permission_check"
-                ? "Выберите все разрешения, которые следует предоставить, затем нажмите «Проверить ответ»."
+              {currentScenario.task_type === "sequence"
+                ? "Нажимайте на шаги в правильном порядке, затем нажмите «Проверить ответ»."
                 : "Выберите все правильные варианты, затем нажмите «Проверить ответ»."}
             </div>
 
             <div className="answers">
               {currentScenario.options.map((option) => {
                 const isSelected = selectedAnswers.includes(option.key)
+                const selectedOrder = selectedAnswers.indexOf(option.key) + 1
+                const correctOrder = currentScenario.correct_options?.indexOf(option.key) + 1
+
+                const isSequenceTask = currentScenario.task_type === "sequence"
+                const isSequenceCorrectPosition =
+                    isSequenceTask &&
+                    isSelected &&
+                    selectedOrder > 0 &&
+                    correctOrder > 0 &&
+                    selectedOrder === correctOrder
+
+                const isSequenceWrongPosition =
+                    isSequenceTask &&
+                    showExplanation &&
+                    isSelected &&
+                    !isSequenceCorrectPosition
 
                 return (
                   <button
                     key={option.key}
                     className={`option-button option-with-badge ${
-                      isSelected ? "selected-option" : ""
+                        isSelected ? "selected-option" : ""
                     } ${
-                      showExplanation && option.isCorrect
-                        ? "correct-option"
-                        : ""
+                        showExplanation && !isSequenceTask && option.isCorrect
+                          ? "correct-option"
+                          : ""
                     } ${
-                      showExplanation && isSelected && !option.isCorrect
-                        ? "wrong-option"
-                        : ""
+                        showExplanation && !isSequenceTask && isSelected && !option.isCorrect
+                          ? "wrong-option"
+                          : ""
+                    } ${
+                        showExplanation && isSequenceCorrectPosition
+                          ? "correct-option"
+                          : ""
+                    } ${
+                        showExplanation && isSequenceWrongPosition
+                          ? "wrong-option"
+                          : ""
                     }`}
                     onClick={() => toggleMultiSelectAnswer(option.key)}
                     disabled={showExplanation}
                   >
-                    <span>{option.text}</span>
-
-                    <span className="answer-badges">
-                      {showExplanation && option.isCorrect && (
-                        <span className="answer-badge correct-badge">
-                          Правильный ответ
-                        </span>
+                    <span>
+                      {currentScenario.task_type === "sequence" && isSelected && (
+                        <strong className="sequence-order-badge">{selectedOrder}</strong>
                       )}
-
-                      {showExplanation && isSelected && (
-                        <span className="answer-badge selected-badge">
-                          Ваш выбор
-                        </span>
-                      )}
-
-                      {showExplanation && option.isCorrect && !isSelected && (
-                        <span className="answer-badge missed-badge">
-                          Пропущено
-                        </span>
-                      )}
-
-                      {showExplanation && isSelected && !option.isCorrect && (
-                        <span className="answer-badge wrong-badge">
-                          Ошибочный выбор
-                        </span>
-                      )}
+                      {option.text}
                     </span>
+
+                    {currentScenario.task_type !== "sequence" && (
+                      <span className="answer-badges">
+                        {showExplanation && option.isCorrect && (
+                          <span className="answer-badge correct-badge">
+                            Правильный ответ
+                          </span>
+                        )}
+
+                        {showExplanation && isSelected && (
+                          <span className="answer-badge selected-badge">
+                            Ваш выбор
+                          </span>
+                        )}
+
+                        {showExplanation && option.isCorrect && !isSelected && (
+                          <span className="answer-badge missed-badge">
+                            Пропущено
+                          </span>
+                        )}
+
+                        {showExplanation && isSelected && !option.isCorrect && (
+                          <span className="answer-badge wrong-badge">
+                            Ошибочный выбор
+                          </span>
+                        )}
+                      </span>
+                    )}
                   </button>
                 )
               })}
@@ -137,46 +188,104 @@ function ScenarioRenderer({
 
             {isMultiAnswerTask(currentScenario.task_type) && (
               <div className="correct-answers-box">
-                <strong>Разбор ответа:</strong>
+                {currentScenario.task_type === "sequence" ? (
+                  <>
+                    <div className="sequence-answer-review">
+                      <strong>Ваш порядок:</strong>
 
-                <ul>
-                  {currentScenario.options
-                    .filter(
-                      (option) =>
-                        option.isCorrect || selectedAnswers.includes(option.key)
-                    )
-                    .map((option) => {
-                      const isSelected = selectedAnswers.includes(option.key)
-                      const isMissed = option.isCorrect && !isSelected
-                      const isWrongChoice = isSelected && !option.isCorrect
+                      <ol className="sequence-review-list">
+                        {selectedAnswers.map((optionKey, index) => {
+                          const option = currentScenario.options.find(
+                            (item) => item.key === optionKey
+                        )
 
-                      return (
-                        <li key={option.key}>
-                          <span>
-                            {option.isCorrect &&
-                              isSelected &&
-                              "✅ Верный выбор: "}
-                            {isMissed && "⚠️ Пропущенный верный ответ: "}
-                            {isWrongChoice && "❌ Ошибочный выбор: "}
-                            <strong>{option.text}</strong>
-                          </span>
+                        const isCorrectPosition =
+                            currentScenario.correct_options?.[index] === optionKey
 
-                          {option.feedback && (
-                            <p className="option-feedback-text">
-                              {option.feedback}
-                            </p>
-                          )}
-                        </li>
-                      )
-                    })}
-                </ul>
-              </div>
+                        if (!option) {
+                            return null
+                        }
+
+                        return (
+                          <li
+                            key={optionKey}
+                            className={
+                                isCorrectPosition
+                                  ? "sequence-review-correct"
+                                  : "sequence-review-wrong"
+                              }
+                            >
+                              {option.text}
+                            </li>
+                          )
+                        })}
+                      </ol>
+                    </div>
+
+                    <div className="sequence-answer-review">
+                      <strong>Правильная последовательность:</strong>
+
+                    <ol className="sequence-correct-list">
+                      {(currentScenario.correct_options || []).map((optionKey) => {
+                        const option = currentScenario.options.find(
+                            (item) => item.key === optionKey
+                        )
+
+                        if (!option) {
+                            return null
+                        }
+
+                        return <li key={optionKey}>{option.text}</li>
+                      })}
+                    </ol>
+                  </div>
+                </>
+                ) : (
+                <>
+                  <strong>Разбор ответа:</strong>
+
+                  <ul>
+                    {currentScenario.options
+                      .filter(
+                        (option) =>
+                            option.isCorrect || selectedAnswers.includes(option.key)
+                        )
+                        .map((option) => {
+                          const isSelected = selectedAnswers.includes(option.key)
+                          const isMissed = option.isCorrect && !isSelected
+                          const isWrongChoice = isSelected && !option.isCorrect
+
+                          return (
+                            <li key={option.key}>
+                            <span>
+                                {option.isCorrect && isSelected && "✅ Верный выбор: "}
+                                {isMissed && "⚠️ Пропущенный верный ответ: "}
+                                {isWrongChoice && "❌ Ошибочный выбор: "}
+                                <strong>{option.text}</strong>
+                            </span>
+
+                            {option.feedback && (
+                                <p className="option-feedback-text">
+                                  {option.feedback}
+                                </p>
+                            )}
+                           </li>
+                        )
+                      })}
+                    </ul>
+                  </>
+                )}
+            </div>
             )}
 
-            <p>{currentScenario.explanation}</p>
+            {currentScenario.explanation?.trim() && (
+              <p>{currentScenario.explanation}</p>
+            )}
 
             <button className="next-button" onClick={handleNextScenario}>
-              Следующий вопрос
+              {currentScenarioIndex === currentScenariosLength - 1
+                ? "Завершить тренировку"
+                : "Следующий вопрос"}
             </button>
           </div>
         )}

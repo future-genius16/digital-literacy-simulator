@@ -190,3 +190,20 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.exam-task-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.exam-task-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 4px;
+  border-radius: 0 0 999px 999px;
+  background: var(--hse-orange);
+  opacity: 0.75;
+}

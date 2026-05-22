@@ -98,6 +98,28 @@ const deleteScenario = async (req, res) => {
   }
 }
 
+const updateScenarioActive = async (req, res) => {
+  const { id } = req.params
+  const { is_active } = req.body
+
+  if (typeof is_active !== "boolean") {
+    return res.status(400).json({ message: "Invalid active status" })
+  }
+
+  try {
+    const scenario = await adminService.updateScenarioActive(id, is_active)
+
+    if (!scenario) {
+      return res.status(404).json({ message: "Scenario not found" })
+    }
+
+    res.json(scenario)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Error updating scenario status" })
+  }
+}
+
 module.exports = {
   getUsers,
   createUser,
@@ -107,4 +129,5 @@ module.exports = {
   createScenario,
   updateScenario,
   deleteScenario,
+  updateScenarioActive,
 }

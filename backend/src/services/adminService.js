@@ -184,8 +184,7 @@ const getAdminStatistics = async () => {
 const allowedTaskTypes = [
   "single_choice",
   "multi_select",
-  "risk_analysis",
-  "permission_check",
+  "sequence",
 ]
 
 const allowedModules = ["info", "phishing", "data", "exam"]
@@ -212,7 +211,8 @@ const createScenario = async ({
   correct_option = null,
   correct_options = null,
   option_feedback = null,
-  explanation,
+  explanation = "",
+  image_url = null,
   level = 1,
   difficulty = "basic",
   task_type = "single_choice",
@@ -237,8 +237,8 @@ const createScenario = async ({
     throw error
   }
 
-  if (!title || !text || !option_a || !option_b || !explanation) {
-    const error = new Error("Title, text, options A/B and explanation are required")
+  if (!title || !text || !option_a || !option_b) {
+    const error = new Error("Title, text and options A/B are required")
     error.statusCode = 400
     throw error
   }
@@ -254,7 +254,7 @@ const createScenario = async ({
   let normalizedCorrectOption = correct_option
   let normalizedCorrectOptions = correct_options
 
-  if (task_type === "single_choice" || task_type === "risk_analysis") {
+  if (task_type === "single_choice") {
     if (!correct_option) {
       const error = new Error("Correct option is required for this task type")
       error.statusCode = 400
@@ -264,7 +264,7 @@ const createScenario = async ({
     normalizedCorrectOptions = [correct_option]
   }
 
-  if (task_type === "multi_select" || task_type === "permission_check") {
+  if (task_type === "multi_select" || task_type === "sequence") {
     if (!Array.isArray(correct_options) || correct_options.length === 0) {
       const error = new Error("Correct options array is required for this task type")
       error.statusCode = 400
@@ -287,6 +287,7 @@ const createScenario = async ({
      correct_option,
      correct_options,
      explanation,
+     image_url,
      level,
      difficulty,
      task_type,
@@ -305,7 +306,7 @@ const createScenario = async ({
      $1, $2, $3, $4, $5, $6, $7, $8,
      $9, $10, $11, $12, $13, $14,
      $15, $16, $17, $18, $19, $20, 
-     $21, $22, $23, true
+     $21, $22, $23, $24, true
    )
    RETURNING *`,
     [
@@ -320,6 +321,7 @@ const createScenario = async ({
       normalizedCorrectOption,
       JSON.stringify(normalizedCorrectOptions),
       explanation,
+      image_url,
       normalizedLevel,
       difficulty,
       task_type,
@@ -338,6 +340,18 @@ const createScenario = async ({
   return result.rows[0]
 }
 
+const updateScenarioActive = async (scenarioId, isActive) => {
+  const result = await pool.query(
+    `UPDATE scenarios
+     SET is_active = $1
+     WHERE id = $2
+     RETURNING *`,
+    [isActive, scenarioId]
+  )
+
+  return result.rows[0]
+}
+
 const updateScenario = async ({
   scenarioId,
   module,
@@ -351,7 +365,8 @@ const updateScenario = async ({
   correct_option = null,
   correct_options = null,
   option_feedback = null,
-  explanation,
+  explanation = "",
+  image_url = null,
   level = 1,
   difficulty = "basic",
   task_type = "single_choice",
@@ -377,10 +392,12 @@ const updateScenario = async ({
     throw error
   }
 
+  const normalizedLevel = Number(level)
+
   let normalizedCorrectOption = correct_option
   let normalizedCorrectOptions = correct_options
 
-  if (task_type === "single_choice" || task_type === "risk_analysis") {
+  if (task_type === "single_choice") {
     if (!correct_option) {
       const error = new Error("Correct option is required for this task type")
       error.statusCode = 400
@@ -390,7 +407,7 @@ const updateScenario = async ({
     normalizedCorrectOptions = [correct_option]
   }
 
-  if (task_type === "multi_select" || task_type === "permission_check") {
+  if (task_type === "multi_select" || task_type === "sequence") {
     if (!Array.isArray(correct_options) || correct_options.length === 0) {
       const error = new Error("Correct options array is required for this task type")
       error.statusCode = 400
@@ -413,20 +430,21 @@ const updateScenario = async ({
          correct_option = $9,
          correct_options = $10,
          explanation = $11,
-         level = $12,
-         difficulty = $13,
-         task_type = $14,
-         exam_section = $15,
-         exam_task_number = $16,
-         exam_task_title = $17,
-         exam_topic = $18,
-         course_materials = $19,
-         digcomp_area = $20,
-         digcomp_competence = $21,
-         learning_outcome = $22,
-         option_feedback = $23,
-         is_active = $24
-     WHERE id = $25
+         image_url = $12,
+         level = $13,
+         difficulty = $14,
+         task_type = $15,
+         exam_section = $16,
+         exam_task_number = $17,
+         exam_task_title = $18,
+         exam_topic = $19,
+         course_materials = $20,
+         digcomp_area = $21,
+         digcomp_competence = $22,
+         learning_outcome = $23,
+         option_feedback = $24,
+         is_active = $25
+     WHERE id = $26
      RETURNING *`,
     [
         module,
@@ -440,7 +458,8 @@ const updateScenario = async ({
         normalizedCorrectOption,
         JSON.stringify(normalizedCorrectOptions),
         explanation,
-        Number(level),
+        image_url,
+        normalizedLevel,
         difficulty,
         task_type,
         exam_section,
@@ -493,4 +512,5 @@ module.exports = {
   createScenario,
   updateScenario,
   deleteScenario,
+  updateScenarioActive,
 }

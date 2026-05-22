@@ -61,4 +61,11 @@ router.delete(
   adminController.deleteScenario
 )
 
+router.patch(
+  "/admin/scenarios/:id/active",
+  authenticateToken,
+  requireAdmin,
+  adminController.updateScenarioActive
+)
+
 module.exports = router

@@ -45,6 +45,13 @@ function App() {
   const [progress, setProgress] = useState([])
   const [selectedLevel, setSelectedLevel] = useState(1)
   const [adminScenarios, setAdminScenarios] = useState([])
+  const [selectedAdminScenario, setSelectedAdminScenario] = useState(null)
+  const [editingScenario, setEditingScenario] = useState(null)
+  const [editScenarioForm, setEditScenarioForm] = useState(null)
+  const [scenarioTaskFilter, setScenarioTaskFilter] = useState("all")
+  const [scenarioSectionFilter, setScenarioSectionFilter] = useState("all")
+  const [scenarioTypeFilter, setScenarioTypeFilter] = useState("all")
+  const [scenarioActiveFilter, setScenarioActiveFilter] = useState("all")
   const [adminActiveTab, setAdminActiveTab] = useState("overview")
   const [scenarioForm, setScenarioForm] = useState({
     module: "exam",
@@ -75,6 +82,7 @@ function App() {
       option_e: "",
     },
     explanation: "",
+    image_url: "",
     digcomp_area: "",
     digcomp_competence: "",
     learning_outcome: "",
@@ -111,6 +119,10 @@ function App() {
       "Failed to load progress": "Не удалось загрузить прогресс.",
       "Failed to load results": "Не удалось загрузить результаты.",
       "Server connection error": "Ошибка соединения с сервером.",
+      "Password must be 6-50 characters long and contain at least one letter and one number":
+        "Пароль должен быть от 6 до 50 символов и содержать хотя бы одну букву и одну цифру.",
+      "This email is not allowed to access the simulator":
+        "Этот email не добавлен в список пользователей тренажёра.",
     }
 
     return errorMessages[message] || message || "Произошла ошибка."
@@ -231,8 +243,9 @@ const handleLogout = () => {
   setEmail("")
   setPassword("")
   setShowAuthModal(false)
-  setAuthMessage("Вы вышли из системы.")
-  setAuthMessageType("success")
+  setAuthMessage("")
+  setAuthMessageType("")
+  showToast("Вы вышли из системы.", "success")
 }
 
 const loadAdminData = async () => {
@@ -736,7 +749,7 @@ const toggleCorrectOption = (optionKey) => {
 const handleCreateScenario = async () => {
   const isMultiAnswer =
     scenarioForm.task_type === "multi_select" ||
-    scenarioForm.task_type === "permission_check"
+    scenarioForm.task_type === "sequence"
 
   const payload = {
     ...scenarioForm,
@@ -758,18 +771,23 @@ const handleCreateScenario = async () => {
     !payload.title.trim() ||
     !payload.text.trim() ||
     !payload.option_a.trim() ||
-    !payload.option_b.trim() ||
-    !payload.explanation.trim()
+    !payload.option_b.trim()
   ) {
     setAdminMessage(
-      "Заполните номер задания НЭ, название задания НЭ, название вопроса, текст вопроса, варианты A/B и общее пояснение."
+      "Заполните номер задания НЭ, название задания НЭ, название вопроса, текст вопроса и варианты A/B."
     )
     setAdminMessageType("error")
     return
   }
 
-  if (isMultiAnswer && scenarioForm.correct_options.length === 0) {
+  if (scenarioForm.task_type === "multi_select" && scenarioForm.correct_options.length === 0) {
     setAdminMessage("Выберите хотя бы один правильный вариант ответа.")
+    setAdminMessageType("error")
+    return
+  }
+
+  if (scenarioForm.task_type === "sequence" && scenarioForm.correct_options.length < 2) {
+    setAdminMessage("Для последовательности выберите минимум два шага в правильном порядке.")
     setAdminMessageType("error")
     return
   }
@@ -824,6 +842,7 @@ const handleCreateScenario = async () => {
         option_e: "",
       },
       explanation: "",
+      image_url: "",
       digcomp_area: "",
       digcomp_competence: "",
       learning_outcome: "",
@@ -842,9 +861,240 @@ const handleCreateScenario = async () => {
   }
 }
 
+const openScenarioEditor = (scenario) => {
+  setEditingScenario(scenario)
+
+  setEditScenarioForm({
+    module: "exam",
+    level: scenario.level || 1,
+    difficulty: scenario.difficulty || "exam",
+    task_type: scenario.task_type || "single_choice",
+    exam_section: scenario.exam_section || "theoretical",
+    exam_task_number: String(scenario.exam_task_number || "1"),
+    exam_task_title: scenario.exam_task_title || "",
+    exam_topic: scenario.exam_topic || "",
+    course_materials: scenario.course_materials || "",
+    title: scenario.title || "",
+    text: scenario.text || "",
+    option_a: scenario.option_a || "",
+    option_b: scenario.option_b || "",
+    option_c: scenario.option_c || "",
+    option_d: scenario.option_d || "",
+    option_e: scenario.option_e || "",
+    correct_option: scenario.correct_option || "option_a",
+    correct_options: scenario.correct_options || [],
+    option_feedback: {
+      option_a: scenario.option_feedback?.option_a || "",
+      option_b: scenario.option_feedback?.option_b || "",
+      option_c: scenario.option_feedback?.option_c || "",
+      option_d: scenario.option_feedback?.option_d || "",
+      option_e: scenario.option_feedback?.option_e || "",
+    },
+    explanation: scenario.explanation || "",
+    image_url: scenario.image_url || "",
+    digcomp_area: scenario.digcomp_area || "",
+    digcomp_competence: scenario.digcomp_competence || "",
+    learning_outcome: scenario.learning_outcome || "",
+    is_active: scenario.is_active,
+  })
+}
+
+const updateEditScenarioForm = (field, value) => {
+  if (field === "exam_task_number") {
+    const selectedTask = displayExamTasks.find(
+      (task) => Number(task.number) === Number(value)
+    )
+
+    setEditScenarioForm((prev) => ({
+      ...prev,
+      exam_task_number: value,
+      exam_section: selectedTask?.section || prev.exam_section,
+      exam_task_title: selectedTask?.title || prev.exam_task_title,
+      exam_topic: getExamTaskKnowledgeText(selectedTask),
+      course_materials: getExamTaskMaterialsText(selectedTask),
+    }))
+
+    return
+  }
+
+  setEditScenarioForm((prev) => ({
+    ...prev,
+    [field]: value,
+  }))
+}
+
+const updateEditScenarioFeedback = (optionKey, value) => {
+  setEditScenarioForm((prev) => ({
+    ...prev,
+    option_feedback: {
+      ...prev.option_feedback,
+      [optionKey]: value,
+    },
+  }))
+}
+
+const toggleEditCorrectOption = (optionKey) => {
+  setEditScenarioForm((prev) => {
+    const alreadySelected = prev.correct_options.includes(optionKey)
+
+    return {
+      ...prev,
+      correct_options: alreadySelected
+        ? prev.correct_options.filter((item) => item !== optionKey)
+        : [...prev.correct_options, optionKey],
+    }
+  })
+}
+
+const handleUpdateScenario = async () => {
+  if (!editingScenario || !editScenarioForm) {
+    return
+  }
+
+  const isMultiAnswer =
+    editScenarioForm.task_type === "multi_select" ||
+    editScenarioForm.task_type === "sequence"
+
+  const payload = {
+    ...editScenarioForm,
+    module: "exam",
+    level: 1,
+    exam_task_number: Number(editScenarioForm.exam_task_number),
+    correct_option: isMultiAnswer
+      ? editScenarioForm.correct_options[0]
+      : editScenarioForm.correct_option,
+    correct_options: isMultiAnswer
+      ? editScenarioForm.correct_options
+      : [editScenarioForm.correct_option],
+  }
+
+  if (
+    !payload.exam_task_number ||
+    !payload.exam_section ||
+    !payload.exam_task_title.trim() ||
+    !payload.title.trim() ||
+    !payload.text.trim() ||
+    !payload.option_a.trim() ||
+    !payload.option_b.trim()
+  ) {
+    setAdminMessage(
+      "Заполните номер задания НЭ, название вопроса, текст вопроса и варианты A/B."
+    )
+    setAdminMessageType("error")
+    return
+  }
+
+  if (
+    editScenarioForm.task_type === "multi_select" &&
+    editScenarioForm.correct_options.length === 0
+  ) {
+    setAdminMessage("Выберите хотя бы один правильный вариант ответа.")
+    setAdminMessageType("error")
+    return
+  }
+
+  if (
+    editScenarioForm.task_type === "sequence" &&
+    editScenarioForm.correct_options.length < 2
+  ) {
+    setAdminMessage("Для последовательности выберите минимум два шага в правильном порядке.")
+    setAdminMessageType("error")
+    return
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:3001/admin/scenarios/${editingScenario.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setAdminMessage(
+        getReadableErrorMessage(data.message || "Не удалось обновить задание.")
+      )
+      setAdminMessageType("error")
+      return
+    }
+
+    setAdminMessage(`Задание "${data.title}" обновлено.`)
+    setAdminMessageType("success")
+
+    setEditingScenario(null)
+    setEditScenarioForm(null)
+
+    loadAdminData()
+
+    fetch("http://localhost:3001/scenarios")
+      .then((res) => res.json())
+      .then((data) => setScenariosFromServer(data))
+      .catch((err) => console.error(err))
+  } catch (error) {
+    console.error(error)
+    setAdminMessage("Ошибка соединения с сервером.")
+    setAdminMessageType("error")
+  }
+}
+
+const handleToggleScenarioActive = async (scenario) => {
+  try {
+    const response = await fetch(
+      `http://localhost:3001/admin/scenarios/${scenario.id}/active`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          is_active: !scenario.is_active,
+        }),
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setAdminMessage(
+        getReadableErrorMessage(data.message || "Не удалось изменить активность задания.")
+      )
+      setAdminMessageType("error")
+      return
+    }
+
+    setAdminMessage(
+      data.is_active
+        ? `Задание "${data.title}" включено.`
+        : `Задание "${data.title}" отключено.`
+    )
+    setAdminMessageType("success")
+
+    loadAdminData()
+
+    fetch("http://localhost:3001/scenarios")
+      .then((res) => res.json())
+      .then((data) => setScenariosFromServer(data))
+      .catch((err) => console.error(err))
+  } catch (error) {
+    console.error(error)
+    setAdminMessage("Ошибка соединения с сервером.")
+    setAdminMessageType("error")
+  }
+}
+
 const openExamTask = async (taskNumber) => {
   if (!currentUser) {
     showToast("Сначала войдите в систему, чтобы начать тренировку.", "error")
+    setAuthMessage("")
+    setAuthMessageType("")
     setShowAuthModal(true)
     return
   }
@@ -861,14 +1111,18 @@ const openExamTask = async (taskNumber) => {
     const data = await response.json()
 
     if (!response.ok) {
-      setAuthMessage(data.message || "Не удалось загрузить задания.")
-      setAuthMessageType("error")
+      showToast(
+        getReadableErrorMessage(data.message || "Не удалось загрузить задания."),
+        "error"
+      )
       return
     }
 
     if (data.length === 0) {
-      setAuthMessage("Для этого раздела пока нет тренировочных заданий.")
-      setAuthMessageType("error")
+      showToast(
+        "Для этого задания пока нет активных тренировочных вопросов.",
+        "error"
+      )
       return
     }
 
@@ -885,8 +1139,7 @@ const openExamTask = async (taskNumber) => {
     setStarted(true)
   } catch (error) {
     console.error(error)
-    setAuthMessage("Ошибка соединения с сервером.")
-    setAuthMessageType("error")
+    showToast("Ошибка соединения с сервером.", "error")
   }
 }
 
@@ -989,8 +1242,29 @@ const currentScenarios = selectedModule
     }
   }
 
+  const handleExitTraining = () => {
+    const shouldExit = window.confirm(
+      "Вы уверены, что хотите выйти из тренировки? Текущий результат не будет сохранён."
+    )
+
+    if (!shouldExit) {
+      return
+    }
+
+    setStarted(false)
+    setFinished(false)
+    setSelectedModule(null)
+    setSelectedExamTask(null)
+    setSelectedLevel(1)
+    setCurrentScenarioIndex(0)
+    setSelectedAnswer(null)
+    setSelectedAnswers([])
+    setShowExplanation(false)
+    setScore(0)
+  }
+
   const isMultiAnswerTask = (taskType) => {
-    return taskType === "multi_select" || taskType === "permission_check"
+    return taskType === "multi_select" || taskType === "sequence"
   }
 
   const toggleMultiSelectAnswer = (optionKey) => {
@@ -1009,12 +1283,20 @@ const checkMultiSelectAnswer = () => {
   const currentScenario = currentScenarios[currentScenarioIndex]
   const correctOptions = currentScenario.correct_options || []
 
-  const selectedSorted = [...selectedAnswers].sort()
-  const correctSorted = [...correctOptions].sort()
+  const isSequenceTask = currentScenario.task_type === "sequence"
 
-  const isCorrect =
-    selectedSorted.length === correctSorted.length &&
-    selectedSorted.every((item, index) => item === correctSorted[index])
+  const isCorrect = isSequenceTask
+    ? selectedAnswers.length === correctOptions.length &&
+      selectedAnswers.every((item, index) => item === correctOptions[index])
+    : (() => {
+        const selectedSorted = [...selectedAnswers].sort()
+        const correctSorted = [...correctOptions].sort()
+
+        return (
+          selectedSorted.length === correctSorted.length &&
+          selectedSorted.every((item, index) => item === correctSorted[index])
+        )
+      })()
 
   if (isCorrect) {
     setScore((prevScore) => prevScore + 1)
@@ -1036,6 +1318,46 @@ const checkMultiSelectAnswer = () => {
     single_choice: "Один правильный ответ",
     multi_select: "Несколько правильных ответов",
     sequence: "Последовательность",
+  }
+
+  const getScenarioOptions = (scenario) =>
+    [
+      { key: "option_a", label: "Вариант A", text: scenario.option_a },
+      { key: "option_b", label: "Вариант B", text: scenario.option_b },
+      { key: "option_c", label: "Вариант C", text: scenario.option_c },
+      { key: "option_d", label: "Вариант D", text: scenario.option_d },
+      { key: "option_e", label: "Вариант E", text: scenario.option_e },
+    ].filter((option) => option.text)
+
+  const getCorrectAnswerText = (scenario) => {
+    const options = getScenarioOptions(scenario)
+
+    if (scenario.task_type === "single_choice") {
+      const correctOption = options.find(
+        (option) => option.key === scenario.correct_option
+      )
+
+      return correctOption ? correctOption.text : "—"
+    }
+
+    if (scenario.task_type === "multi_select") {
+      return options
+        .filter((option) => scenario.correct_options?.includes(option.key))
+        .map((option) => option.text)
+        .join("; ")
+    }
+
+    if (scenario.task_type === "sequence") {
+      return (scenario.correct_options || [])
+        .map((optionKey, index) => {
+          const option = options.find((item) => item.key === optionKey)
+          return option ? `${index + 1}. ${option.text}` : null
+        })
+        .filter(Boolean)
+        .join("\n")
+    }
+
+    return "—"
   }
 
   const shouldShowOptionFeedback = scenarioForm.task_type === "multi_select"
@@ -1083,6 +1405,28 @@ const checkMultiSelectAnswer = () => {
       sequenceCount,
     }
   })
+
+  const filteredAdminScenarios = adminScenarios
+    .filter((scenario) => scenario.module === "exam")
+    .filter((scenario) => {
+      const matchesTask =
+        scenarioTaskFilter === "all" ||
+        Number(scenario.exam_task_number) === Number(scenarioTaskFilter)
+
+      const matchesSection =
+        scenarioSectionFilter === "all" ||
+        scenario.exam_section === scenarioSectionFilter
+
+      const matchesType =
+        scenarioTypeFilter === "all" ||
+        scenario.task_type === scenarioTypeFilter
+
+      const matchesActive =
+        scenarioActiveFilter === "all" ||
+        String(scenario.is_active) === scenarioActiveFilter
+
+      return matchesTask && matchesSection && matchesType && matchesActive
+    })
 
   const filteredAdminUsers = adminUsers.filter((user) => {
     const matchesSearch =
@@ -1165,17 +1509,17 @@ const uniqueCourses = [
             </button>
 
             <button
-              className={adminActiveTab === "tasks" ? "active-tab" : ""}
-              onClick={() => setAdminActiveTab("tasks")}
-            >
-              Задания НЭ
-            </button>
-
-            <button
               className={adminActiveTab === "taskInfo" ? "active-tab" : ""}
               onClick={() => setAdminActiveTab("taskInfo")}
             >
               Информация о заданиях
+            </button>
+
+            <button
+              className={adminActiveTab === "tasks" ? "active-tab" : ""}
+              onClick={() => setAdminActiveTab("tasks")}
+            >
+              Банк заданий
             </button>
 
             <button
@@ -1203,6 +1547,380 @@ const uniqueCourses = [
               >
                 ×
               </button>
+            </div>
+          )}
+
+          {selectedAdminScenario && (
+            <div
+              className="modal-overlay"
+              onClick={() => setSelectedAdminScenario(null)}
+            >
+              <div
+                className="scenario-view-modal"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="scenario-view-header">
+                  <div>
+                    <p className="scenario-label">
+                      № {selectedAdminScenario.exam_task_number || "—"} ·{" "}
+                      {selectedAdminScenario.exam_section === "theoretical"
+                        ? "Теоретическая часть"
+                        : selectedAdminScenario.exam_section === "practical"
+                        ? "Практическая часть"
+                        : "Задание НЭ"}
+                    </p>
+
+                    <h2>{selectedAdminScenario.title}</h2>
+
+                    <p>
+                      {selectedAdminScenario.exam_task_title || "Без привязки к заданию НЭ"}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="modal-close-button"
+                    onClick={() => setSelectedAdminScenario(null)}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="scenario-view-meta">
+                  <div>
+                    <span>Тип вопроса</span>
+                    <strong>
+                      {taskTypeLabels[selectedAdminScenario.task_type] ||
+                        selectedAdminScenario.task_type}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Часть экзамена</span>
+                    <strong>
+                      {selectedAdminScenario.exam_section === "theoretical"
+                        ? "Теоретическая"
+                        : selectedAdminScenario.exam_section === "practical"
+                        ? "Практическая"
+                        : "—"}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Статус</span>
+                    <strong>{selectedAdminScenario.is_active ? "Активно" : "Отключено"}</strong>
+                  </div>
+                </div>
+
+                <div className="scenario-view-section">
+                  <h3>Текст вопроса</h3>
+                  <p>{selectedAdminScenario.text}</p>
+
+                  {selectedAdminScenario.image_url && (
+                    <div className="scenario-view-image-wrapper">
+                      <img
+                        src={selectedAdminScenario.image_url}
+                        alt="Иллюстрация к заданию"
+                        className="scenario-view-image"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="scenario-view-section">
+                  <h3>
+                    {selectedAdminScenario.task_type === "sequence"
+                      ? "Шаги"
+                      : "Варианты ответа"}
+                  </h3>
+
+                  <div className="scenario-view-options">
+                    {getScenarioOptions(selectedAdminScenario).map((option) => (
+                      <div key={option.key} className="scenario-view-option">
+                        <strong>{option.label}</strong>
+                        <span>{option.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="scenario-view-section">
+                  <h3>
+                    {selectedAdminScenario.task_type === "sequence"
+                      ? "Правильная последовательность"
+                      : "Правильный ответ"}
+                  </h3>
+
+                  <pre className="scenario-view-answer">
+                    {getCorrectAnswerText(selectedAdminScenario)}
+                  </pre>
+                </div>
+
+                {selectedAdminScenario.explanation?.trim() && (
+                  <div className="scenario-view-section">
+                    <h3>Пояснение</h3>
+                    <p>{selectedAdminScenario.explanation}</p>
+                  </div>
+                )}
+
+                <div className="scenario-view-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setSelectedAdminScenario(null)}
+                  >
+                    Закрыть
+                  </button>
+
+                  <button
+                      type="button"
+                      onClick={() => {
+                      openScenarioEditor(selectedAdminScenario)
+                      setSelectedAdminScenario(null)
+                    }}
+                  >
+                    Редактировать
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {editingScenario && editScenarioForm && (
+            <div
+              className="modal-overlay"
+              onClick={() => {
+                setEditingScenario(null)
+                setEditScenarioForm(null)
+              }}
+            >
+              <div
+                className="scenario-edit-modal"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="scenario-view-header">
+                  <div>
+                    <p className="scenario-label">Редактирование задания</p>
+                    <h2>{editingScenario.title}</h2>
+                    <p>Измените данные тренировочного вопроса и сохраните результат.</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="modal-close-button"
+                    onClick={() => {
+                      setEditingScenario(null)
+                      setEditScenarioForm(null)
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="scenario-admin-form">
+                  <div className="scenario-form-block">
+                    <h4>Привязка к экзамену</h4>
+
+                    <label className="admin-field-label">
+                      Номер задания НЭ
+                      <select
+                        value={editScenarioForm.exam_task_number}
+                        onChange={(event) =>
+                          updateEditScenarioForm("exam_task_number", event.target.value)
+                        }
+                      >
+                        {displayExamTasks.map((task) => (
+                          <option key={task.number} value={String(task.number)}>
+                            Задание {task.number}. {task.title}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="admin-field-label">
+                      Часть экзамена
+                      <input
+                        type="text"
+                        value={
+                          editScenarioForm.exam_section === "theoretical"
+                            ? "Теоретическая часть"
+                            : "Практическая часть"
+                        }
+                        readOnly
+                      />
+                    </label>
+
+                    <label className="admin-field-label">
+                      Название задания НЭ
+                      <input type="text" value={editScenarioForm.exam_task_title} readOnly />
+                    </label>
+                  </div>
+
+                  <div className="scenario-form-block">
+                    <h4>Содержание вопроса</h4>
+
+                    <label className="admin-field-label">
+                      Тип вопроса
+                      <select
+                        value={editScenarioForm.task_type}
+                        onChange={(event) =>
+                          updateEditScenarioForm("task_type", event.target.value)
+                        }
+                      >
+                        <option value="single_choice">Один правильный ответ</option>
+                        <option value="multi_select">Несколько правильных ответов</option>
+                        <option value="sequence">Последовательность действий</option>
+                      </select>
+                    </label>
+
+                    <input
+                      type="text"
+                      placeholder="Название вопроса"
+                      value={editScenarioForm.title}
+                      onChange={(event) =>
+                        updateEditScenarioForm("title", event.target.value)
+                      }
+                    />
+
+                    <textarea
+                      placeholder="Текст вопроса"
+                      value={editScenarioForm.text}
+                      onChange={(event) =>
+                        updateEditScenarioForm("text", event.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="scenario-form-block">
+                    <h4>
+                      {editScenarioForm.task_type === "sequence"
+                        ? "Шаги последовательности"
+                        : "Варианты ответа"}
+                    </h4>
+
+                    <div className="scenario-options-grid">
+                      {["option_a", "option_b", "option_c", "option_d", "option_e"].map(
+                        (optionKey) => (
+                          <div key={optionKey} className="scenario-option-editor">
+                            <label>
+                              {editScenarioForm.task_type === "sequence"
+                                ? `Шаг ${optionLabels[optionKey].replace("Вариант ", "")}`
+                                : optionLabels[optionKey]}
+                            </label>
+
+                            <input
+                              type="text"
+                              placeholder={
+                                editScenarioForm.task_type === "sequence"
+                                  ? "Описание шага"
+                                  : `Текст для ${optionLabels[optionKey]}`
+                              }
+                              value={editScenarioForm[optionKey]}
+                              onChange={(event) =>
+                                updateEditScenarioForm(optionKey, event.target.value)
+                              }
+                            />
+
+                            {editScenarioForm.task_type === "multi_select" && (
+                              <textarea
+                                placeholder={`Пояснение для ${optionLabels[optionKey]}`}
+                                value={editScenarioForm.option_feedback[optionKey]}
+                                onChange={(event) =>
+                                  updateEditScenarioFeedback(optionKey, event.target.value)
+                                }
+                              />
+                            )}
+
+                            {editScenarioForm.task_type === "multi_select" ? (
+                              <label className="correct-option-control">
+                                <input
+                                  type="checkbox"
+                                  checked={editScenarioForm.correct_options.includes(optionKey)}
+                                  onChange={() => toggleEditCorrectOption(optionKey)}
+                                />
+                                Правильный вариант
+                              </label>
+                            ) : editScenarioForm.task_type === "sequence" ? (
+                              <label className="correct-option-control">
+                                <input
+                                  type="checkbox"
+                                  checked={editScenarioForm.correct_options.includes(optionKey)}
+                                  onChange={() => toggleEditCorrectOption(optionKey)}
+                                />
+                                Включить в последовательность
+                              </label>
+                            ) : (
+                              <label className="correct-option-control">
+                                <input
+                                  type="radio"
+                                  name="edit_correct_option"
+                                  checked={editScenarioForm.correct_option === optionKey}
+                                  onChange={() =>
+                                    updateEditScenarioForm("correct_option", optionKey)
+                                  }
+                                />
+                                Правильный вариант
+                              </label>
+                            )}
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    {editScenarioForm.task_type === "sequence" && (
+                      <p className="field-hint">
+                        Отмечайте шаги в правильном порядке. Если ошиблись, снимите выбор
+                        и отметьте шаги заново.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="scenario-form-block">
+                    <h4>Пояснение <span className="optional-label">(необязательно)</span></h4>
+
+                    <textarea
+                      placeholder="Общее пояснение к заданию, если оно есть"
+                      value={editScenarioForm.explanation}
+                      onChange={(event) =>
+                        updateEditScenarioForm("explanation", event.target.value)
+                      }
+                    />
+                    <label className="admin-field-label">
+                      Ссылка на изображение
+                      <input
+                        type="text"
+                        placeholder="/images/tasks/task-1-question-1.png"
+                        value={editScenarioForm.image_url}
+                        onChange={(event) =>
+                          updateEditScenarioForm("image_url", event.target.value)
+                        }
+                      />
+                    </label>
+
+                    <p className="field-hint">
+                      Поле необязательное. Используйте путь к изображению из папки public, например:
+                      /images/tasks/task-1-question-1.png
+                    </p>
+                  </div>
+
+                  <div className="scenario-edit-actions">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => {
+                        setEditingScenario(null)
+                        setEditScenarioForm(null)
+                      }}
+                    >
+                      Отмена
+                    </button>
+
+                    <button type="button" onClick={handleUpdateScenario}>
+                      Сохранить изменения
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1473,6 +2191,7 @@ const uniqueCourses = [
                     >
                       <option value="single_choice">Один правильный ответ</option>
                       <option value="multi_select">Несколько правильных ответов</option>
+                      <option value="sequence">Последовательность действий</option>
                     </select>
                   </label>
 
@@ -1491,17 +2210,29 @@ const uniqueCourses = [
                 </div>
 
                 <div className="scenario-form-block">
-                  <h4>Варианты ответа</h4>
+                  <h4>
+                    {scenarioForm.task_type === "sequence"
+                      ? "Шаги последовательности"
+                      : "Варианты ответа"}
+                  </h4>
 
                   <div className="scenario-options-grid">
                     {["option_a", "option_b", "option_c", "option_d", "option_e"].map(
                       (optionKey) => (
                         <div key={optionKey} className="scenario-option-editor">
-                          <label>{optionLabels[optionKey]}</label>
+                          <label>
+                            {scenarioForm.task_type === "sequence"
+                              ? `Шаг ${optionLabels[optionKey].replace("Вариант ", "")}`
+                              : optionLabels[optionKey]}
+                          </label>
 
                           <input
                             type="text"
-                            placeholder={`Текст для ${optionLabels[optionKey]}`}
+                            placeholder={
+                              scenarioForm.task_type === "sequence"
+                                ? "Описание шага"
+                                : `Текст для ${optionLabels[optionKey]}`
+                            }
                             value={scenarioForm[optionKey]}
                             onChange={(event) =>
                               updateScenarioForm(optionKey, event.target.value)
@@ -1518,8 +2249,7 @@ const uniqueCourses = [
                             />
                           )}
 
-                          {scenarioForm.task_type === "multi_select" ||
-                          scenarioForm.task_type === "permission_check" ? (
+                          {scenarioForm.task_type === "multi_select" ? (
                             <label className="correct-option-control">
                               <input
                                 type="checkbox"
@@ -1527,6 +2257,15 @@ const uniqueCourses = [
                                 onChange={() => toggleCorrectOption(optionKey)}
                               />
                               Правильный вариант
+                            </label>
+                          ) : scenarioForm.task_type === "sequence" ? (
+                            <label className="correct-option-control">
+                              <input
+                                type="checkbox"
+                                checked={scenarioForm.correct_options.includes(optionKey)}
+                                onChange={() => toggleCorrectOption(optionKey)}
+                              />
+                              Включить в последовательность
                             </label>
                           ) : (
                             <label className="correct-option-control">
@@ -1545,18 +2284,40 @@ const uniqueCourses = [
                       )
                     )}
                   </div>
+                  {scenarioForm.task_type === "sequence" && (
+                    <p className="field-hint">
+                      Отмечайте шаги в том порядке, в котором они должны идти в правильном ответе.
+                      Если ошиблись с порядком, снимите выбор и отметьте шаги заново.
+                    </p>
+                  )}
                 </div>
 
                 <div className="scenario-form-block">
-                  <h4>Пояснение</h4>
+                  <h4>Пояснение <span className="optional-label">(необязательно)</span></h4>
 
                   <textarea
-                    placeholder="Общее пояснение к заданию"
+                    placeholder="Общее пояснение к заданию, если оно есть"
                     value={scenarioForm.explanation}
                     onChange={(event) =>
                       updateScenarioForm("explanation", event.target.value)
                     }
                   />
+                  <label className="admin-field-label">
+                    Ссылка на изображение
+                    <input
+                      type="text"
+                      placeholder="/images/tasks/task-1-question-1.png"
+                      value={scenarioForm.image_url}
+                      onChange={(event) =>
+                        updateScenarioForm("image_url", event.target.value)
+                      }
+                    />
+                  </label>
+
+                  <p className="field-hint">
+                    Поле необязательное. Используйте путь к изображению из папки public, например:
+                    /images/tasks/task-1-question-1.png
+                  </p>
                 </div>
 
                 <button onClick={handleCreateScenario}>Добавить задание</button>
@@ -1566,7 +2327,48 @@ const uniqueCourses = [
 
           {adminActiveTab === "tasks" && (
             <div className="admin-section">
-              <h3>Задания НЭ</h3>
+              <h3>Банк заданий</h3>
+              <div className="admin-filters scenario-filters">
+                <select
+                  value={scenarioTaskFilter}
+                  onChange={(event) => setScenarioTaskFilter(event.target.value)}
+                >
+                  <option value="all">Все задания НЭ</option>
+                  {displayExamTasks.map((task) => (
+                    <option key={task.number} value={String(task.number)}>
+                      Задание {task.number}. {task.title}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={scenarioSectionFilter}
+                  onChange={(event) => setScenarioSectionFilter(event.target.value)}
+                >
+                  <option value="all">Все части экзамена</option>
+                  <option value="theoretical">Теоретическая часть</option>
+                  <option value="practical">Практическая часть</option>
+                </select>
+
+                <select
+                  value={scenarioTypeFilter}
+                  onChange={(event) => setScenarioTypeFilter(event.target.value)}
+                >
+                  <option value="all">Все типы</option>
+                  <option value="single_choice">Один правильный ответ</option>
+                  <option value="multi_select">Несколько правильных ответов</option>
+                  <option value="sequence">Последовательность</option>
+                </select>
+
+                <select
+                  value={scenarioActiveFilter}
+                  onChange={(event) => setScenarioActiveFilter(event.target.value)}
+                >
+                  <option value="all">Все статусы</option>
+                  <option value="true">Активные</option>
+                  <option value="false">Отключённые</option>
+                </select>
+              </div>
 
               <div className="admin-table-wrapper scenario-list">
                 <table className="admin-table">
@@ -1578,13 +2380,12 @@ const uniqueCourses = [
                       <th>Тип</th>
                       <th>Название</th>
                       <th>Активно</th>
+                      <th>Действия</th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {adminScenarios
-                      .filter((scenario) => scenario.module === "exam")
-                      .map((scenario) => (
+                    {filteredAdminScenarios.map((scenario) => (
                         <tr key={scenario.id}>
                           <td>{scenario.id}</td>
                           <td>{scenario.exam_task_number || "—"}</td>
@@ -1598,8 +2399,40 @@ const uniqueCourses = [
                           <td>{taskTypeLabels[scenario.task_type] || scenario.task_type}</td>
                           <td>{scenario.title}</td>
                           <td>{scenario.is_active ? "Да" : "Нет"}</td>
+                          <td>
+                           <div className="table-actions">
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              onClick={() => setSelectedAdminScenario(scenario)}
+                            >
+                              Просмотр
+                            </button>
+                            
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              onClick={() => openScenarioEditor(scenario)}
+                            >
+                              Редактировать
+                            </button>
+
+                            <button
+                              type="button"
+                              className={scenario.is_active ? "danger-button" : "secondary-button"}
+                              onClick={() => handleToggleScenarioActive(scenario)}
+                            >
+                              {scenario.is_active ? "Отключить" : "Включить"}
+                            </button>
+                          </div>
+                        </td>
                         </tr>
                       ))}
+                      {filteredAdminScenarios.length === 0 && (
+                        <tr>
+                          <td colSpan="7">По выбранным фильтрам задания не найдены.</td>
+                        </tr>
+                      )}
                   </tbody>
                 </table>
               </div>
@@ -1860,7 +2693,11 @@ if (showResults) {
       <div className="app">
         <TopBar
           currentUser={currentUser}
-          onOpenAuth={() => setShowAuthModal(true)}
+          onOpenAuth={() => {
+            setAuthMessage("")
+            setAuthMessageType("")
+            setShowAuthModal(true)
+          }}
           onLogout={handleLogout}
           onOpenResults={() => setShowResults(true)}
           onOpenAdmin={() => {
@@ -1946,7 +2783,13 @@ if (showResults) {
 
                   <div className="hero-actions">
                     {!currentUser ? (
-                      <button onClick={() => setShowAuthModal(true)}>
+                      <button
+                        onClick={() => {
+                          setAuthMessage("")
+                          setAuthMessageType("")
+                          setShowAuthModal(true)
+                        }}
+                      >
                         Войти и начать подготовку
                       </button>
                     ) : (
@@ -2058,59 +2901,125 @@ if (showResults) {
   }
 
   if (finished) {
+    const totalQuestions = currentScenarios.length
     const percentage =
-      currentScenarios.length > 0
-        ? Math.round((score / currentScenarios.length) * 100)
-        : 0
+      totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0
+
+    const resultTitle =
+      percentage >= 80
+        ? "Отличный результат"
+        : percentage >= 50
+        ? "Хорошая попытка"
+        : "Тренировка завершена"
+
+    const resultText =
+      percentage >= 80
+        ? "Раздел можно считать подготовленным. Можно переходить к следующему заданию НЭ."
+        : percentage >= 50
+        ? "Часть тем уже понятна, но стоит разобрать ошибки и пройти тренировку ещё раз."
+        : "Рекомендуем повторить материалы по этому заданию и попробовать ещё раз."
+
+    const resetTraining = () => {
+      setStarted(false)
+      setCurrentScenarioIndex(0)
+      setSelectedAnswer(null)
+      setSelectedAnswers([])
+      setShowExplanation(false)
+      setFinished(false)
+      setScore(0)
+    }
+
+    const returnToExamTasks = () => {
+      resetTraining()
+      setSelectedExamTask(null)
+
+      loadProgress()
+      loadResults()
+
+      setTimeout(() => {
+        document
+          .getElementById("exam-tasks-section")
+          ?.scrollIntoView({ behavior: "smooth" })
+      }, 100)
+    }
+
+    const retryTraining = () => {
+      setCurrentScenarioIndex(0)
+      setSelectedAnswer(null)
+      setSelectedAnswers([])
+      setShowExplanation(false)
+      setFinished(false)
+      setScore(0)
+    }
 
     return (
       <div className="app">
         <div className="scenario">
-          <p className="scenario-label">
-            {selectedExamTask
-              ? `Задание ${selectedExamTask.number}. ${selectedExamTask.title}`
-              : `Уровень ${selectedLevel}`}
-          </p>
+          <div className="result-card">
+            <p className="scenario-label">
+              {selectedExamTask
+                ? `Задание ${selectedExamTask.number}. ${selectedExamTask.title}`
+                : `Уровень ${selectedLevel}`}
+            </p>
 
-          <h2>Тренировка завершена</h2>
+            <div className="result-layout">
+              <div className="result-progress">
+                <div
+                  className="result-progress-ring"
+                  style={{
+                    background: `conic-gradient(var(--hse-orange) ${percentage * 3.6}deg, var(--border-color) 0deg)`,
+                  }}
+                >
+                  <div className="result-progress-inner">
+                    <strong>{percentage}%</strong>
+                    <span>результат</span>
+                  </div>
+                </div>
+              </div>
 
-          <p>
-            Вы ответили правильно на {score} из {currentScenarios.length} вопросов.
-          </p>
+              <div className="result-content">
+                <h2>{resultTitle}</h2>
 
-          <p>
-            Результат: <strong>{percentage}%</strong>
-          </p>
+                <p className="result-summary">
+                  Вы ответили правильно на <strong>{score}</strong> из{" "}
+                  <strong>{totalQuestions}</strong> вопросов.
+                </p>
 
-          <p className="level-note">
-            {percentage >= 80
-              ? "Отличный результат. Раздел можно считать подготовленным."
-              : "Рекомендуется повторить тему и пройти тренировку ещё раз."}
-          </p>
+                <p className="result-recommendation">{resultText}</p>
 
-          <button
-            onClick={() => {
-              setStarted(false)
-              setCurrentScenarioIndex(0)
-              setSelectedAnswer(null)
-              setSelectedAnswers([])
-              setShowExplanation(false)
-              setFinished(false)
-              setScore(0)
-              setSelectedExamTask(null)
+                <div className="result-details">
+                  <div>
+                    <span>Правильных ответов</span>
+                    <strong>{score}</strong>
+                  </div>
 
-              loadProgress()
-              loadResults()
+                  <div>
+                    <span>Всего вопросов</span>
+                    <strong>{totalQuestions}</strong>
+                  </div>
 
-              setTimeout(() => {
-                document
-                  .getElementById("exam-tasks-section")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }, 100)
-            }}
-          >
-            Вернуться к заданиям НЭ
-          </button>
+                  <div>
+                    <span>Лучший ориентир</span>
+                    <strong>80%</strong>
+                  </div>
+                </div>
+
+                <div className="result-actions">
+                  <button type="button" onClick={retryTraining}>
+                    Пройти ещё раз
+                  </button>
+
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={returnToExamTasks}
+                  >
+                    Вернуться к заданиям НЭ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -2131,6 +3040,7 @@ if (showResults) {
       checkMultiSelectAnswer={checkMultiSelectAnswer}
       handleAnswerClick={handleAnswerClick}
       handleNextScenario={handleNextScenario}
+      handleExitTraining={handleExitTraining}
     />
   )
 }

@@ -9,7 +9,11 @@ function TopBar({
   return (
     <header className="topbar">
       <div className="topbar-brand">
-        <span className="topbar-logo">НЭ</span>
+        <img
+          src="/images/hse-logo.png"
+          alt="ВШЭ"
+          className="topbar-logo-image"
+        />
 
         <div>
           <strong>Тренажёр НЭ ВШЭ</strong>
