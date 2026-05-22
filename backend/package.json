@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
-  },
+    "start": "node src/server.js",
+    "test": "node --test",
+    "audit:bank": "node src/seeds/auditExamBank.js"
+  },  
   "keywords": [],
   "author": "",
   "license": "ISC",
